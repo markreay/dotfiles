@@ -13,7 +13,7 @@ do
             debug=true
         ;;
         ?)
-            echo >&2 "Usage $0 [-f]"
+            echo >&2 "Usage $0 [-fd]"
             exit 2
         ;;
     esac
@@ -39,11 +39,23 @@ fix_link() {
     DEBUG actual = "$actual"
     DEBUG dest = "$dest"
     
-    if [ -z $(readlink $src) ]
+    if [[ -f "$dest" && ! -L "$dest" ]]
+    then
+        echo Normal file exists $src
+        if $fix
+        then
+            echo Installing symlink $src '==>' $dest
+            mv --backup=numbered $src $src.backup
+            ln -sf $dest $src
+        else
+            echo Should be $src '==>' $dest
+            can_fix=true
+        fi
+    elif [[ -z $(readlink $src) ]]
     then
         echo Installing symlink $src '==>' $dest
         ln -s $dest $src
-    elif [ "$actual" != "$dest" ]
+    elif [[ "$actual" != "$dest" ]]
     then
         echo Bad symlink $src '==>' $actual
         if $fix
@@ -57,7 +69,7 @@ fix_link() {
     fi
 }
 
-fix_link ~/.bash_profile $dir/bash_profile
+fix_link ~/.bashrc $dir/bashrc
 fix_link ~/.gitconfig $dir/git.config
 
 if $can_fix
