@@ -1,14 +1,10 @@
 #! /bin/bash
 
-fix=false
 debug=false
 
 while getopts fd opt
 do
     case "$opt" in
-        f)
-            fix=true
-        ;;
         d)
             debug=true
         ;;
@@ -23,7 +19,6 @@ DEBUG() {
     $debug && echo DEBUG: $*
 }
 
-can_fix=false
 script=$(readlink -f $BASH_SOURCE)
 dir=$(dirname $script)
 
@@ -42,15 +37,9 @@ fix_link() {
     if [[ -f "$dest" && ! -L "$dest" ]]
     then
         echo Normal file exists $src
-        if $fix
-        then
-            echo Installing symlink $src '==>' $dest
-            mv --backup=numbered $src $src.backup
-            ln -sf $dest $src
-        else
-            echo Should be $src '==>' $dest
-            can_fix=true
-        fi
+        echo Installing symlink $src '==>' $dest
+        mv -v --backup=numbered $src $src.backup
+        ln -sf $dest $src
     elif [[ -z $(readlink $src) ]]
     then
         echo Installing symlink $src '==>' $dest
@@ -58,21 +47,13 @@ fix_link() {
     elif [[ "$actual" != "$dest" ]]
     then
         echo Bad symlink $src '==>' $actual
-        if $fix
-        then
         echo Installing symlink $src '==>' $dest
-            ln -sf $dest $src
-        else
-            echo      Should be $src '==>' $dest
-            can_fix=true
-        fi
+        mv -v --backup=numbered $src $src.backup
+        ln -sf $dest $src
     fi
 }
 
 fix_link ~/.bashrc $dir/bashrc
 fix_link ~/.gitconfig $dir/git.config
 
-if $can_fix
-then
-    echo To fix issues run $0 -f
-fi
+. ~/.bashrc
