@@ -34,7 +34,10 @@ fix_link() {
     DEBUG actual = "$actual"
     DEBUG dest = "$dest"
     
-    if [[ -f "$dest" && ! -L "$dest" ]]
+    DEBUG -f "$src" = $([[ -f "$src" ]] && echo "true" || echo "false")
+    DEBUG -L "$src" = $([[ -L "$src" ]] && echo "true" || echo "false")
+ 
+    if [[ -f "$src" && ! -L "$src" ]]
     then
         echo Normal file exists $src
         echo Installing symlink $src '==>' $dest
