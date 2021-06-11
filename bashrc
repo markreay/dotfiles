@@ -11,6 +11,7 @@ then
     . $dir/scripts/alias.bash
     . $dir/scripts/dircolors.bash
     . $dir/scripts/set-title.bash
+    . $dir/scripts/ssh-agent.bash
     . $dir/scripts/git.bash
     . $dir/scripts/history.bash
     . $dir/scripts/extras.bash
