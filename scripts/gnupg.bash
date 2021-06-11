@@ -23,6 +23,12 @@ function check_gpg() {
         return 1;
     fi
 
+    if [[ "$(git config --global --get commit.gpgsign)" != "true" ]]
+    then
+        WARNING "git gpg signing not enabled"
+        FIX "to fix: git config --global commit.gpgsign true"
+    fi
+
     GPG_TRUST_LEVEL=$(gpg --with-colons --list-key $GPG_SIGNING_KEY | grep ^pub | cut -d: -f2)
     if [[ $GPG_TRUST_LEVEL != "u" ]]; then
         WARNING "git signing key not doesn't have ultimate trust" 
