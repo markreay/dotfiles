@@ -13,6 +13,7 @@ then
     . $dir/scripts/set-title.bash
     . $dir/scripts/ssh-agent.bash
     . $dir/scripts/git.bash
+    . $dir/scripts/gnupg.bash
     . $dir/scripts/history.bash
     . $dir/scripts/extras.bash
     . $dir/scripts/vs-code.bash
