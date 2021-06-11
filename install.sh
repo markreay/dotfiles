@@ -57,6 +57,5 @@ fix_link() {
 }
 
 fix_link ~/.bashrc $dir/bashrc
-fix_link ~/.gitconfig $dir/git.config
 
 . ~/.bashrc
