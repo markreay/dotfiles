@@ -3,6 +3,12 @@ TITLE Enabling gnupg . . .
 export GPG_TTY=$(tty)
 
 function check_gpg() {
+    if ! which gpg > /dev/null
+    then
+        WARNING "gpg not installed"
+        return 1;
+    fi
+
     local public_key=$(gpg --with-colons --list-key $signing_key | grep ^fpr | head -1 | cut -d: -f10)
     if [[ -z $public_key ]]; then
         WARNING "No gpg key registered"

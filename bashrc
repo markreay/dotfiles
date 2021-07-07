@@ -1,6 +1,17 @@
 if [[ ! $DOTFILES ]]
 then
-    script=`readlink -f $BASH_SOURCE`
+    if which realpath > /dev/null 
+    then
+        resolvelink() { 
+            realpath $* 
+        }
+    else
+        resolvelink() { 
+            readlink -f $* 
+        }
+    fi
+
+    script=$(resolvelink $BASH_SOURCE)
     dir=`dirname $script`
 
     if [ -e ~/.dotfilesrc ]; then
@@ -20,4 +31,5 @@ then
     . $dir/scripts/wsl.bash
     . $dir/scripts/dotfiles.bash
     . $dir/scripts/prompt.bash
+    . $dir/scripts/macos.bash
 fi

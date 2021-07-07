@@ -18,7 +18,7 @@ function start_ssh_agent {
 if [ -f "${SSH_ENV}" ]; then
     . "${SSH_ENV}" > /dev/null
     
-    if [ "$(basename $(ps -h -o command -p ${SSH_AGENT_PID} | cut -f1 -d' ') 2>/dev/null)" != "ssh-agent" ]; then
+    if [ "$(basename $(ps -o command -p ${SSH_AGENT_PID} | tail -1 | cut -f1 -d' ') 2>/dev/null)" != "ssh-agent" ]; then
         WARNING "ssh-agent not running on ${SSH_AGENT_PID} as expected . . . restarting"
         start_ssh_agent;
     else

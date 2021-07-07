@@ -2,6 +2,18 @@
 
 debug=false
 
+if which realpath > /dev/null 
+then
+    resolvelink() { 
+        realpath $* 
+    }
+else
+    resolvelink() { 
+        readlink -f $* 
+    }
+fi
+
+
 while getopts fd opt
 do
     case "$opt" in
@@ -19,7 +31,8 @@ DEBUG() {
     $debug && echo DEBUG: $*
 }
 
-script=$(readlink -f $BASH_SOURCE)
+can_fix=false
+script=$(resolvelink $BASH_SOURCE)
 dir=$(dirname $script)
 
 DEBUG script = $script
@@ -28,7 +41,7 @@ DEBUG dir = $dir
 fix_link() {
     
     local src="$1" dest="$2"
-    local actual=$(readlink -f $src)
+    local actual=$(resolvelink $src)
     
     DEBUG src = "$src"
     DEBUG actual = "$actual"
@@ -57,5 +70,6 @@ fix_link() {
 }
 
 fix_link ~/.bashrc $dir/bashrc
+fix_link ~/.bash_profile $dir/bash_profile
 
 . ~/.bashrc
