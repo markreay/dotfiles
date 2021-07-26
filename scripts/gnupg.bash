@@ -60,7 +60,7 @@ function check_gpg() {
     }
 
     check_gpg_agent_conf default-cache-ttl 86400
-    check_gpg_agent_conf maximum-cache-ttl 86400
+    check_gpg_agent_conf max-cache-ttl 86400
 
     echo Force passphrase entry on login | gpg --detach-sign - > /dev/null
 }
