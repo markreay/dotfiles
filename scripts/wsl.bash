@@ -6,19 +6,6 @@ if [ $WSL_DISTRO_NAME ]
 then
     TITLE Enabling Windows Subsystem for Linux Customizations . . .
 
-    if dir_in_path /mnt/c/WINDOWS/system32
-    then 
-        WARNING appendWindowsPath not enabled in /etc/wsl.conf
-        INFO
-        INFO To correct, add the following lines to /etc/wsl.conf
-        INFO
-        INFO "   [interop]"
-        INFO "   appendWindowsPath=false # append Windows path to \$PATH variable; default is true"
-        INFO
-        INFO Then restart WSL to refresh by running \"wsl -t $WSL_DISTRO_NAME\" from Windows command prompt.
-        INFO
-    fi
-
     wsl=$(wslpath $(wslvar SYSTEMROOT)/System32/wsl.exe)
     if [ -e "$wsl" ]
     then
