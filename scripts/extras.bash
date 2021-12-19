@@ -18,6 +18,14 @@ if [ -d $dir/bin ]; then
 fi
 
 ############################################
+# prepend .local/bin to PATH
+echo Trying to add ~/.local/bin
+if [ -d ~/.local/bin ]; then
+    echo Adding ~/.local/bin
+    prepend_to_path ~/.local/bin
+fi
+
+############################################
 # prepend yarn bin to PATH
 if [ -d ~/.yarn/bin ]; then
     prepend_to_path ~/.yarn/bin
