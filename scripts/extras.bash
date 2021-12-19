@@ -13,8 +13,8 @@ fi
 
 ############################################
 # prepend dotfiles bin to PATH
-if [ -d "$dir/bin" ]; then
-    prepend_to_path "$dir/bin"
+if [ -d $dir/bin ]; then
+    prepend_to_path $dir/bin
 fi
 
 ############################################
