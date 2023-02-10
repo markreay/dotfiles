@@ -2,11 +2,11 @@
 # Start ssh-agent
 # adapted from https://stackoverflow.com/questions/40549332/how-to-check-if-ssh-agent-is-already-running-in-bash
 
-TITLE Enabling ssh-agent . . .
-
-SSH_ENV="$HOME/.ssh/environment"
-
 function check-ssh-agent {
+  TITLE Enabling ssh-agent . . .
+
+  SSH_ENV="$HOME/.ssh/environment"
+
   ssh-add -l &> /dev/null
   if [[ "$?" == 2 ]]; then
     # Try to connect to running ssh-agent
@@ -29,4 +29,4 @@ function check-ssh-agent {
   ssh-add -l
 }
 
-check-ssh-agent
+[[ ! $CODESPACES ]] && check-ssh-agent

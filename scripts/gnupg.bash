@@ -1,8 +1,8 @@
-TITLE Enabling gnupg . . .
-
-export GPG_TTY=$(tty)
-
 function check_gpg() {
+    export GPG_TTY=$(tty)
+
+    TITLE Enabling gnupg . . .
+
     if ! which gpg > /dev/null
     then
         WARNING "gpg not installed"
@@ -65,4 +65,4 @@ function check_gpg() {
     echo Force passphrase entry on login | gpg --detach-sign - > /dev/null
 }
 
-check_gpg
+[[ ! $CODESPACES ]] && check_gpg
