@@ -1,4 +1,7 @@
-function pipenv_activate()
+function pyenv()
 { 
-    source $(pipenv --venv)/bin/activate
+    if VENV=$(pipenv --venv)
+    then
+        source $VENV/bin/activate
+    fi
 }
