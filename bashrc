@@ -31,5 +31,6 @@ then
     . $dir/scripts/wsl.bash
     . $dir/scripts/dotfiles.bash
     . $dir/scripts/prompt.bash
+    . $dir/scripts/python.bash
     . $dir/scripts/macos.bash
 fi
