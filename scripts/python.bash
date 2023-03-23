@@ -1,6 +1,6 @@
 function pyenv()
 { 
-    if VENV=$(pipenv --venv)
+    if VENV=$(python3 -m pipenv --venv)
     then
         source $VENV/bin/activate
     fi
