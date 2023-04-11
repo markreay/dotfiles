@@ -72,4 +72,22 @@ fix_link() {
 fix_link ~/.bashrc $dir/bashrc
 fix_link ~/.bash_profile $dir/bash_profile
 
+function update_config_file() {
+	local config_file="$1"
+	local option="$2"
+	local value="$3"
+	if [ ! -e $config_file ] || ! (grep "^$option" $config_file > /dev/null)
+	then
+		echo Appending $option $value to $config_file
+		echo "$option $value" >> $config_file
+	elif ! (grep "^$option $value" $config_file > /dev/null)
+	then
+		echo Changing $option to $value in $config_file
+		sed -i "s/^$option [0-9]*$/$option $value/" $config_file
+	fi
+}
+
+update_config_file ~/.gnupg/gpg-agent.conf default-cache-ttl 86400
+update_config_file ~/.gnupg/gpg-agent.conf max-cache-ttl 86400
+
 . ~/.bashrc
