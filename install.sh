@@ -87,6 +87,7 @@ function update_config_file() {
 	fi
 }
 
+mkdir -p ~/.gnupg
 update_config_file ~/.gnupg/gpg-agent.conf default-cache-ttl 86400
 update_config_file ~/.gnupg/gpg-agent.conf max-cache-ttl 86400
 
