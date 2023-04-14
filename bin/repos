@@ -1,0 +1,59 @@
+#! /bin/bash
+
+globalUserName=`git config --include --global user.name`
+globalUserEmail=`git config --include --global user.email`
+
+cmd=$1
+shift
+
+case $cmd in
+    user)
+        echo "[Global]"
+        echo user.name = $globalUserName
+        echo user.email = $globalUserEmail
+    ;;
+esac
+
+
+for dir in `find ~ -name .git -type d`
+do
+    (
+        cd $dir/..
+        repo=`realpath $dir/.. --relative-base ~`
+        
+        case $cmd in
+            ""|list)
+                echo $repo
+            ;;
+            fetch)
+                    echo \[$repo\]
+		    git fetch
+            ;;
+            status)
+                if [[ `git status -s` ]]
+                then
+                    echo \[$repo\]
+                    git status $*
+                fi
+            ;;
+            user)
+                userName=`git config user.name`
+                userEmail=`git config user.email`
+                
+                if [[ $globalUserName != $userName || $globalUserEmail != $userEmail ]]
+                then
+                    echo
+                    echo \[$repo\]
+                    if [[ $globalUserName != $userName ]]
+                    then
+                        echo user.name = $userName
+                    fi
+                    if [[ $globalUserEmail != $userEmail ]]
+                    then
+                        echo user.email = $userEmail
+                    fi
+                fi
+            ;;
+        esac
+    )
+done
