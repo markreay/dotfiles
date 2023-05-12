@@ -17,7 +17,7 @@ esac
 for dir in $(find ~ -name .git -type d | sort); do
     (
         cd $dir/..
-        repo=$(realpath $dir/.. --relative-base ~)
+        repo=\~/$(realpath $dir/.. --relative-base ~)
 
         case $cmd in
         "" | list)
