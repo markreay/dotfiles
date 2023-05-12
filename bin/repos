@@ -14,7 +14,7 @@ user)
     ;;
 esac
 
-for dir in $(find ~ -name .git -type d); do
+for dir in $(find ~ -name .git -type d | sort); do
     (
         cd $dir/..
         repo=$(realpath $dir/.. --relative-base ~)
