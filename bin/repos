@@ -12,6 +12,20 @@ user)
     echo user.name = $globalUserName
     echo user.email = $globalUserEmail
     ;;
+"" | help)
+    echo
+    echo "Usage: repos [command]"
+    echo
+    echo "Commands:"
+    echo "  fetch [args]    Run git fetch in each repo."
+    echo "  git [args]      Run git command in each repo."
+    echo "  help            Show this screen."
+    echo "  list            List all repos."
+    echo "  status [args]   Run git status in each repo."
+    echo "  user            List global git user settings and repos with different user settings."
+    echo
+    exit
+    ;;
 esac
 
 for dir in $(find ~ -name .git -type d | sort); do
@@ -20,7 +34,7 @@ for dir in $(find ~ -name .git -type d | sort); do
         repo=\~/$(realpath $dir/.. --relative-base ~)
 
         case $cmd in
-        "" | list)
+        list)
             echo $repo
             ;;
         fetch)
