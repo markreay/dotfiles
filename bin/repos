@@ -25,7 +25,7 @@ for dir in $(find ~ -name .git -type d | sort); do
             ;;
         fetch)
             echo \[$repo\]
-            git fetch
+            git fetch $*
             ;;
         git)
             echo \[$repo\]
