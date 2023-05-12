@@ -26,9 +26,13 @@ do
                 echo $repo
             ;;
             fetch)
-                    echo \[$repo\]
-		    git fetch
+                echo \[$repo\]
+		        git fetch
             ;;
+            git)
+                echo \[$repo\]
+		        git $*
+            ;;            
             status)
                 if [[ `git status -s` ]]
                 then
