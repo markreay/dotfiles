@@ -65,4 +65,12 @@ function check_gpg() {
     echo Force passphrase entry on login | gpg --detach-sign - > /dev/null
 }
 
+function refresh_gpg() {
+    if [[ ! $CODESPACES ]]
+    then
+        gpgconf --kill gpg-agent
+        check_gpg
+    fi
+}
+
 [[ ! $CODESPACES ]] && check_gpg
