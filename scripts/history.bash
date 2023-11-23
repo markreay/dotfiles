@@ -28,3 +28,11 @@ _bash_history_append() {
     builtin history -a
 }
 PROMPT_COMMAND="_bash_history_append; $PROMPT_COMMAND"
+
+function hist() {
+    search=$1
+    (
+        cd ~/.history
+        grep -r "$search" . | sort
+    )
+}
