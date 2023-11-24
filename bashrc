@@ -30,7 +30,9 @@ then
     . $dir/scripts/vs-code.bash
     . $dir/scripts/wsl.bash
     . $dir/scripts/dotfiles.bash
+    . $dir/scripts/password-store.bash
     . $dir/scripts/prompt.bash
     . $dir/scripts/python.bash
     . $dir/scripts/macos.bash
+    INFO "                                                                      "
 fi
