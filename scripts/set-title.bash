@@ -7,6 +7,17 @@ then
 
     TITLE Enabling set window title . . .
 
+    function set_window_title() {
+        if [[ $WT_SESSION ]]
+        then
+            echo -en "\033]0;$1\a"
+        fi
+    }
+
+    function set_window_title_suffix() {
+        set_window_title "$WINDOW_TITLE $*"
+    }
+
     function _update_window_title() {
 
         WINDOW_TITLE=$(cd "$(echo $PWD)"; basename "$(dirs +0)")
@@ -25,7 +36,7 @@ then
             fi
         fi
 
-        echo -en "\033]0;$WINDOW_TITLE\a"
+        set_window_title "$WINDOW_TITLE"
     }
 
     if ! [[ $PROMPT_COMMAND =~ "_update_window_title" ]]
@@ -33,4 +44,5 @@ then
         PROMPT_COMMAND="_update_window_title; $PROMPT_COMMAND"
     fi
 
+    trap 'set_window_title_suffix ${BASH_COMMAND}' DEBUG
 fi
