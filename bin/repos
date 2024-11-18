@@ -3,6 +3,13 @@
 globalUserName=$(git config --include --global user.name)
 globalUserEmail=$(git config --include --global user.email)
 
+basePath=~
+
+if [[ $1 == "--path" ]]; then
+    basePath=$2
+    shift 2
+fi
+
 cmd=$1
 shift
 
@@ -14,7 +21,10 @@ user)
     ;;
 "" | help)
     echo
-    echo "Usage: repos [command]"
+    echo "Usage: repos [--path <base_path>] [command]"
+    echo
+    echo "Options:"
+    echo "  --path <base_path>  Use a different base path than ~."
     echo
     echo "Commands:"
     echo "  fetch [args]    Run git fetch in each repo."
@@ -28,10 +38,10 @@ user)
     ;;
 esac
 
-for dir in $(find ~ -name .git -type d | sort); do
+for dir in $(find $basePath -name .git -type d | sort); do
     (
         cd $dir/..
-        repo=\~/$(realpath $dir/.. --relative-base ~)
+        repo=$basePath/$(realpath $dir/.. --relative-base $basePath)
 
         case $cmd in
         list)
