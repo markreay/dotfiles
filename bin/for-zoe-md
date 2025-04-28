@@ -1,0 +1,50 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Find the root of the repo
+git_root=$(git rev-parse --show-toplevel 2>/dev/null)
+if [ -z "$git_root" ]; then
+  echo "Not inside a git repository."
+  exit 1
+fi
+
+# Go to the repo root
+cd "$git_root"
+
+# Make a temp file for the md
+md_file=$(mktemp /tmp/forzoe-XXXXXX.md)
+
+# Archive only tracked files (respects .gitignore)
+mapfile -d '' -t files < <(git ls-files -z)
+
+# Loop over each provided file
+for file in "${files[@]}"; do
+  if file --mime-type "$file" | grep -q 'text/'; then
+    printf "\n### %s\n\n" "$file" >> "$md_file"
+    cat "$file" >> "$md_file"
+    printf "\n---\n" >> "$md_file"
+  else
+    echo "Skipping binary file: $file"
+  fi
+done
+
+# Copy actual file content to clipboard (depends on system)
+if command -v xclip &>/dev/null; then
+  # Linux with xclip - copy file content
+  xclip -selection clipboard < "$md_file"
+  echo "Markdown file contents copied to clipboard: $md_file"
+elif command -v pbcopy &>/dev/null; then
+  # macOS - copy file content
+  pbcopy <"$md_file"
+  echo "Markdown file contents copied to clipboard: $md_file"
+elif command -v wl-copy &>/dev/null; then
+  # Wayland clipboard - copy file content
+  wl-copy <"$md_file"
+  echo "Markdown file contents copied to clipboard: $md_file"
+else
+  echo "No clipboard tool found. Markdown file at: $md_file"
+  exit 1
+fi
+
+exit 0
