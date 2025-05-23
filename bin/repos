@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 globalUserName=$(git config --include --global user.name)
 globalUserEmail=$(git config --include --global user.email)
