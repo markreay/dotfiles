@@ -11,12 +11,7 @@ function check_gpg() {
 
     get_gpg_fpr_by_user_id() {
         local email="$1"
-        gpg --list-keys --keyid-format=long --with-colons | \
-            grep -B10000 "^uid.*<$email>" | \
-            tail -r | \
-            grep ^fpr | \
-            head -1 | \
-            cut -d: -f10
+        gpg --list-keys --with-colons "$email" | awk -F: '/^fpr/ { print $10; exit }'
     }
 
     local USER_ID=$(git config --global --get user.email)
