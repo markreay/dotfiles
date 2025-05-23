@@ -17,6 +17,7 @@ then
     if [ -e ~/.dotfilesrc ]; then
         . ~/.dotfilesrc
     fi
+    . $dir/scripts/macos.bash
     . $dir/scripts/shared.bash
     . $dir/scripts/colors.bash
     . $dir/scripts/alias.bash
@@ -33,6 +34,5 @@ then
     . $dir/scripts/password-store.bash
     . $dir/scripts/prompt.bash
     . $dir/scripts/python.bash
-    . $dir/scripts/macos.bash
     INFO "                                                                      "
 fi
