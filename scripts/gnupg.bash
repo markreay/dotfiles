@@ -9,9 +9,21 @@ function check_gpg() {
         return 1;
     fi
 
-    local public_key=$(gpg --with-colons --list-key $signing_key | grep ^fpr | head -1 | cut -d: -f10)
+    get_gpg_fpr_by_user_id() {
+        local email="$1"
+        gpg --list-keys --keyid-format=long --with-colons | \
+            grep -B10000 "^uid.*<$email>" | \
+            tail -r | \
+            grep ^fpr | \
+            head -1 | \
+            cut -d: -f10
+    }
+
+    local USER_ID=$(git config --global --get user.email)
+
+    local public_key=$(get_gpg_fpr_by_user_id $USER_ID)
     if [[ -z $public_key ]]; then
-        WARNING "No gpg key registered"
+        WARNING "No gpg key registered for $USER_ID"
         FIX "to fix: gpg --import private.key"
         return 1;
     fi
@@ -37,7 +49,7 @@ function check_gpg() {
 
     local trust_level=$(gpg --with-colons --list-key $signing_key | grep ^pub | cut -d: -f2)
     if [[ $trust_level != "u" ]]; then
-        WARNING "git signing key not doesn't have ultimate trust" 
+        WARNING "git signing key does not have ultimate trust" 
         FIX "to fix: gpg --edit-key $signing_key"
         FIX "then trust"
         return 1;
@@ -62,7 +74,10 @@ function check_gpg() {
     check_gpg_agent_conf default-cache-ttl 86400
     check_gpg_agent_conf max-cache-ttl 86400
 
+    # Force gpg-agent to prompt passphrase now so future commits are seamless
     echo Force passphrase entry on login | gpg --detach-sign - > /dev/null
+
+    INFO "GPG git signing is properly configured for $USER_ID"
 }
 
 function refresh_gpg() {
