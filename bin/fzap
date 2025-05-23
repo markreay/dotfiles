@@ -63,7 +63,8 @@ fi
 cd "$git_root"
 
 # Make a temp file for the md
-md_file=$(mktemp /tmp/forzoe-XXXXXX.md)
+md_file=$(mktemp /tmp/forzoe.XXXXXX)
+md_file="${md_file}.md"
 
 # Archive only tracked files (respects .gitignore)
 mapfile -d '' -t files < <(git ls-files -z)
