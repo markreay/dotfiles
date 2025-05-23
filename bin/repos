@@ -38,10 +38,18 @@ user)
     ;;
 esac
 
-for dir in $(find $basePath -name .git -type d | sort); do
+DIRS=$(find "$basePath" \( \
+  -path "~/Music" -o \
+  -path "~/Pictures" -o \
+  -path "~/Desktop" -o \
+  -path "~/Library" \
+  \) -prune -o -name .git -type d -print 2>/dev/null | sort)
+
+for dir in $DIRS; do
     (
         cd $dir/..
-        repo=$basePath/$(realpath $dir/.. --relative-base $basePath)
+        repo=$(realpath "$dir/..")
+        repo=${repo/~/\~}
 
         case $cmd in
         list)
