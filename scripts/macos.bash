@@ -1,4 +1,7 @@
-if [[ $OSTYPE == "darwin"* ]]
+# Source utilities
+source "$(dirname "${BASH_SOURCE[0]}")/utils.bash"
+
+if is_mac_os
 then
 
     export BASH_SILENCE_DEPRECATION_WARNING=1

@@ -17,6 +17,7 @@ then
     if [ -e ~/.dotfilesrc ]; then
         . ~/.dotfilesrc
     fi
+    . $dir/scripts/utils.bash
     . $dir/scripts/macos.bash
     . $dir/scripts/shared.bash
     . $dir/scripts/colors.bash

@@ -2,7 +2,7 @@
 # Windows Subsystem for Linux Customizations
 #
 
-if [ $WSL_DISTRO_NAME ]
+if is_wsl
 then
     TITLE Enabling Windows Subsystem for Linux Customizations . . .
 
