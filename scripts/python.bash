@@ -1,4 +1,4 @@
-function pyenv()
+function initpy()
 { 
    # if pipenv exists, use that to get VENV, else
    # use python3 -m pipenv --venv
