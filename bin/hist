@@ -7,7 +7,7 @@
 
 HIST_DIR="${HOME}/.history"
 HOSTNAME_SHORT=$(hostname | cut -d '.' -f 1 | tr '[:upper:]' '[:lower:]')
-DATE_FMT="+%b %d %H:%M"  # e.g., "Jul 19 12:43"
+DATE_FMT="%Y-%m-%d %H:%M"  # e.g., "Jul 19 12:43"
 
 hist_usage() {
     echo "Usage: hist {recent|grep|push} [args...]"
