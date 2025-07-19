@@ -82,7 +82,7 @@ hist_grep() {
 hist_push() {
     cd "$HIST_DIR" || { echo "Cannot access $HIST_DIR"; return 1; }
     git add .
-    git commit -m "Auto-history push $(date)"
+    git commit -m "Auto-history push from $HOSTNAME_SHORT $(date)"
     git push
 }
 
