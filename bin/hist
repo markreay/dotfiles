@@ -27,6 +27,12 @@ hist_parse_and_print() {
     local date_fmt="%Y-%m-%d %H:%M"
 
     awk -v DATE_FMT="$date_fmt" -v SEARCH="$search" '
+    BEGIN {
+        tty_color = "\033[38;5;36m"     # Cyan-ish
+        date_color = "\033[1;38;5;244m" # Faint grey
+        cmd_color = "\033[0m"           # Reset/default
+        reset = "\033[0m"
+    }
     FILENAME ~ /[^/]+$/ {
         tty = FILENAME;
         sub(/.*\//, "", tty);            # strip path
@@ -38,11 +44,15 @@ hist_parse_and_print() {
         dir = meta[2];
         getline cmd;
         if (SEARCH == "" || cmd ~ SEARCH) {
-            printf "%s  %-8s  %s\n", strftime(DATE_FMT, ts), tty, cmd;
+            printf "%s%s%s  %s%-8s%s  %s%s%s\n",
+                date_color, strftime(DATE_FMT, ts), reset,
+                tty_color, tty, reset,
+                cmd_color, cmd, reset;
         }
     }
-    ' "$@"
+    ' "$@" | sort -r | less -R
 }
+
 
 
 hist_recent() {
@@ -56,7 +66,7 @@ hist_recent() {
         files=$(find "$HIST_DIR/$HOSTNAME_SHORT" -type f)
     fi
 
-    hist_parse_and_print "" $files | sort -r | less
+    hist_parse_and_print "" $files
 }
 
 hist_grep() {
@@ -76,7 +86,7 @@ hist_grep() {
         files=$(find "$HIST_DIR/$HOSTNAME_SHORT" -type f)
     fi
 
-    hist_parse_and_print "$search" $files | sort -r | less
+    hist_parse_and_print "$search" $files
 }
 
 hist_push() {
