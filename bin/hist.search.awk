@@ -1,10 +1,10 @@
 BEGIN {
-    date_color     = "\033[38;5;201m"   # Magenta
-    tty_color      = "\033[38;5;36m"    # Cyan
-    cmd_color      = "\033[38;5;244m"   # Soft gray
-    highlight_start = "\033[1;33m"      # Bright yellow
-    highlight_end   = cmd_color
-    reset           = "\033[0m"
+    date_color               = "\033[38;5;201m" # Magenta
+    tty_color                = "\033[38;5;36m"  # Cyan
+    cmd_no_search_color      = "\033[0m"        # White
+    cmd_search_match_color   = "\033[1;33m"     # Bright yellow
+    cmd_search_nomatch_color = "\033[38;5;244m" # Soft gray
+    reset                    = "\033[0m"
 
     n = split(TERMS, terms, "\t")
 }
@@ -24,9 +24,14 @@ BEGIN {
     }
 
     if (match_all) {
-        # ✅ highlight matches
-        for (j = 1; j <= n; j++) {
-            gsub(terms[j], highlight_start terms[j] highlight_end, cmd)
+        if (n > 0) {
+            # ✅ highlight matches
+            for (j = 1; j <= n; j++) {
+                gsub(terms[j], cmd_search_match_color terms[j] cmd_search_nomatch_color, cmd)
+            }
+            cmd_color = cmd_search_nomatch_color
+        } else {
+            cmd_color = cmd_no_search_color
         }
 
         tty = FILENAME
