@@ -23,10 +23,20 @@ hist_usage() {
 }
 
 hist_parse_and_print() {
-    local search="$1"
-    shift  # Remove the search term from the arguments
+    local terms=()
+    local files=()
     local date_fmt="%Y-%m-%d %H:%M"
     local awk_file="$(dirname "$0")/hist.search.awk"
+
+    while [[ "$1" != "--" && "$#" -gt 0 ]]; do
+        terms+=("$1")
+        shift
+    done
+    shift  # skip the "--"
+
+    files=("$@")
+
+    local SEARCH_TERMS=$(IFS=$'\t'; echo "${terms[*]}")
 
     page_on_terminal() {
         if [[ -t 1 ]]; then
@@ -36,9 +46,10 @@ hist_parse_and_print() {
         fi
     }
 
-    awk -v DATE_FMT="$date_fmt" -v SEARCH="$search" -f "$awk_file" "$@" | 
+    awk -v DATE_FMT="$date_fmt" -v TERMS="$SEARCH_TERMS" -f "$awk_file" "${files[@]}" |
         sort | page_on_terminal
 }
+
 
 
 
@@ -58,13 +69,22 @@ hist_recent() {
 
 hist_grep() {
     local all=0
-    [[ "$1" == "--all" || "$1" == "-a" ]] && { all=1; shift; }
+    local terms=()
 
-    local search="$1"
-    if [[ -z "$search" ]]; then
-        echo "Usage: hist grep [--all] <term>"
+    while [[ "$1" =~ ^- ]]; do
+        case "$1" in
+            --all|-a) all=1 ;;
+            *) echo "Unknown option: $1" && return 1 ;;
+        esac
+        shift
+    done
+
+    # All remaining args are search terms
+    if [[ $# -eq 0 ]]; then
+        echo "Usage: hist grep [--all] <term1> [term2...]"
         return 1
     fi
+    terms=("$@")
 
     local files
     if [[ "$all" -eq 1 ]]; then
@@ -73,8 +93,11 @@ hist_grep() {
         files=$(find "$HIST_DIR/$HOSTNAME_SHORT" -type f)
     fi
 
-    hist_parse_and_print "$search" $files
+    echo "Searching history for terms: ${terms[*]}"
+
+    hist_parse_and_print "${terms[@]}" -- $files
 }
+
 
 hist_push() {
     cd "$HIST_DIR" || { echo "Cannot access $HIST_DIR"; return 1; }
