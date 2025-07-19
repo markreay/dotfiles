@@ -88,9 +88,8 @@ hist_push() {
 
 # Main entrypoint
 case "$1" in
-    recent)
-        shift
-        hist_recent "$@"
+    help|--help|-h)
+        hist_usage
         ;;
     grep)
         shift
@@ -99,7 +98,8 @@ case "$1" in
     push)
         hist_push
         ;;
-    *)
-        hist_usage
+    recent|*)
+        shift
+        hist_recent "$@"
         ;;
 esac
