@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+
+# hist - Bash history supertool
+# Location: ~/.bin/hist (make sure it's in $PATH)
+# Requires: git, grep, sort, less
+# Optional: fzf, rg, bat
+
+HIST_DIR="${HOME}/.history"
+HOSTNAME_SHORT=$(hostname | cut -d '.' -f 1 | tr '[:upper:]' '[:lower:]')
+DATE_FMT="+%b %d %H:%M"  # e.g., "Jul 19 12:43"
+
+hist_usage() {
+    echo "Usage: hist {recent|grep|push} [args...]"
+    echo
+    echo "Subcommands:"
+    echo "  recent       Show most recent commands on this machine"
+    echo "               Options: --all, -a  Include all machines"
+    echo
+    echo "  grep <term>  Search command history"
+    echo "               Options: --all, -a  Search across all machines"
+    echo
+    echo "  push         Commit & push .history git repo"
+}
+
+hist_recent() {
+    local all=0
+    [[ "$1" == "--all" || "$1" == "-a" ]] && all=1
+
+    local files
+    if [[ "$all" -eq 1 ]]; then
+        files=$(find "$HIST_DIR" -type f)
+    else
+        files=$(find "$HIST_DIR/$HOSTNAME_SHORT" -type f)
+    fi
+
+    awk '
+    /^#/ {
+        split(substr($0, 2), meta, ":");
+        ts = meta[1];
+        dir = meta[2];
+        getline cmd;
+        printf "%s  %s\n", strftime("'"$DATE_FMT"'", ts), cmd;
+    }' $files | sort -r | less
+}
+
+hist_grep() {
+    local all=0
+    [[ "$1" == "--all" || "$1" == "-a" ]] && { all=1; shift; }
+
+    local search="$1"
+    if [[ -z "$search" ]]; then
+        echo "Usage: hist grep [--all] <term>"
+        return 1
+    fi
+
+    local files
+    if [[ "$all" -eq 1 ]]; then
+        files=$(find "$HIST_DIR" -type f)
+    else
+        files=$(find "$HIST_DIR/$HOSTNAME_SHORT" -type f)
+    fi
+
+    awk -v term="$search" '
+    /^#/ {
+        split(substr($0, 2), meta, ":");
+        ts = meta[1];
+        dir = meta[2];
+        getline cmd;
+        if (cmd ~ term) {
+            printf "%s  %s\n", strftime("'"$DATE_FMT"'", ts), cmd;
+        }
+    }' $files | sort -r | less
+}
+
+hist_push() {
+    cd "$HIST_DIR" || { echo "Cannot access $HIST_DIR"; return 1; }
+    git add .
+    git commit -m "Auto-history push $(date)"
+    git push
+}
+
+# Main entrypoint
+case "$1" in
+    recent)
+        shift
+        hist_recent "$@"
+        ;;
+    grep)
+        shift
+        hist_grep "$@"
+        ;;
+    push)
+        hist_push
+        ;;
+    *)
+        hist_usage
+        ;;
+esac
