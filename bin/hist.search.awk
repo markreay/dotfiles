@@ -1,11 +1,14 @@
 BEGIN {
-    tty_color = "\033[38;5;36m"
-    date_color = "\033[1;38;5;244m"
-    cmd_color = "\033[0m"
-    reset = "\033[0m"
+    date_color     = "\033[38;5;201m"   # Magenta
+    tty_color      = "\033[38;5;36m"    # Cyan
+    cmd_color      = "\033[38;5;244m"   # Soft gray
+    highlight_start = "\033[1;33m"      # Bright yellow
+    highlight_end   = cmd_color
+    reset           = "\033[0m"
 
     n = split(TERMS, terms, "\t")
 }
+
 /^#/ {
     split(substr($0, 2), meta, ":")
     ts = meta[1]
@@ -21,6 +24,11 @@ BEGIN {
     }
 
     if (match_all) {
+        # ✅ highlight matches
+        for (j = 1; j <= n; j++) {
+            gsub(terms[j], highlight_start terms[j] highlight_end, cmd)
+        }
+
         tty = FILENAME
         sub(/.*\//, "", tty)
         sub(/^[0-9\-]+_/, "", tty)
