@@ -34,11 +34,3 @@ _bash_history_append() {
 if [[ "$PROMPT_COMMAND" != *"_bash_history_append"* ]]; then
     PROMPT_COMMAND="_bash_history_append; $PROMPT_COMMAND"
 fi
-
-function hist() {
-    search=$1
-    (
-        cd ~/.history
-        grep -r "$search" . | sort
-    )
-}
