@@ -64,7 +64,7 @@ hist_recent() {
         files=$(find "$HIST_DIR/$HOSTNAME_SHORT" -type f)
     fi
 
-    hist_parse_and_print "" $files
+    hist_parse_and_print "" -- $files
 }
 
 hist_grep() {
