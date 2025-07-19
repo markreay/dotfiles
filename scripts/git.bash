@@ -5,33 +5,31 @@ TITLE Setting up git . . .
 export EDITOR=vim
 
 (
-    if [[ ! $CODESPACES ]]
-    # Codespaces doesn't support global configuration - configuration is per repo
-    then
-
-        DEFAULT_GIT_BRANCH=main
-
-        if [[ ! $(git config --global --get init.defaultBranch)  ]]
-        then
-            WARNING No default branch in git config
-            FIX git config --global init.defaultBranch $DEFAULT_GIT_BRANCH
-        elif [[ ${GIT_DEFAULT_BRANCH:-$DEFAULT_GIT_BRANCH} != $(git config --global --get init.defaultBranch) ]]
-        then
-            WARNING Default branch in git config is not $DEFAULT_GIT_BRANCH
-            FIX git config --global init.defaultBranch $DEFAULT_GIT_BRANCH
-        fi
-
-        if [[ ! $(git config --global --get user.name) ]]
-        then
-            WARNING No name in git config
-            FIX git config --global user.name YOUR NAME
-        fi
-
-        if [[ ! $(git config --global --get user.email) ]]
-        then
-            WARNING No name in git config
-            FIX git config --global user.email YOUR@EMAIL.ADDRESS
-        fi
-
+    if [[ $CODESPACES ]]; then
+        # Codespaces doesn't support global configuration - configuration is per repo
+        return 0 2>/dev/null || exit 0
     fi
+
+    EXPECTED_INIT_DEFAULTBRANCH=main
+    EXPECTED_USER_NAME="Mark Reay"
+    EXPECTED_USER_EMAIL="markreay@gmail.com"
+
+    git_check_and_set() {
+        local key="$1"
+        local expected="$2"
+        local current
+        current=$(git config --global --get "$key")
+
+        if [[ -z "$current" ]]; then
+            WARNING "$key not set"
+            FIX "git config --global $key \"$expected\""
+        elif [[ "$current" != "$expected" ]]; then
+            WARNING "$key is \"$current\" (should be \"$expected\")"
+            FIX "git config --global $key \"$expected\""
+        fi
+    }
+
+    git_check_and_set init.defaultBranch "$EXPECTED_INIT_DEFAULTBRANCH"
+    git_check_and_set user.name "$EXPECTED_USER_NAME"
+    git_check_and_set user.email "$EXPECTED_USER_EMAIL"
 )
