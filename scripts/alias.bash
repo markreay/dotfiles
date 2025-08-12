@@ -3,3 +3,10 @@ TITLE Configuring aliases . . .
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
+
+function axe() {
+    (
+        cd ~/Downloads || return
+        cmd.exe /c axe $*
+    )
+}
