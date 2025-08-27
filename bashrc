@@ -1,4 +1,10 @@
-if [[ ! $DOTFILES ]]
+# suppress dotfiles if we're in an SSH session AND it's not interactive
+if [ -n "$SSH_CONNECTION" ] && [[ ! $- =~ i ]]; then
+    DOTFILES_SUPPRESS_SCRIPTS=True
+fi
+
+
+if [[ ! $DOTFILES ]] && [[ ! $DOTFILES_SUPPRESS_SCRIPTS ]]
 then
     if which realpath > /dev/null 
     then
