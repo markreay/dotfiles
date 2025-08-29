@@ -5,6 +5,18 @@
 # Requires: git, grep, sort, less
 # Optional: fzf, rg, bat
 
+# Use GNU awk if available (especially on macOS)
+AWK=awk
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  if command -v gawk >/dev/null 2>&1; then
+    AWK=gawk
+  else
+    echo "[hist] Error: GNU awk (gawk) is required on macOS. Please install it with:"
+    echo "  brew install gawk"
+    exit 1
+  fi
+fi
+
 HIST_DIR="${HOME}/.history"
 HOSTNAME_SHORT=$(hostname | cut -d '.' -f 1 | tr '[:upper:]' '[:lower:]')
 DATE_FMT="%Y-%m-%d %H:%M"  # e.g., "Jul 19 12:43"
@@ -46,7 +58,7 @@ hist_parse_and_print() {
         fi
     }
 
-    awk -v DATE_FMT="$date_fmt" -v TERMS="$SEARCH_TERMS" -f "$awk_file" "${files[@]}" |
+    $AWK -v DATE_FMT="$date_fmt" -v TERMS="$SEARCH_TERMS" -f "$awk_file" "${files[@]}" |
         sort | page_on_terminal
 }
 
@@ -58,11 +70,13 @@ hist_recent() {
     [[ "$1" == "--all" || "$1" == "-a" ]] && all=1
 
     local files
+    local search_dir
     if [[ "$all" -eq 1 ]]; then
-        files=$(find "$HIST_DIR" -type f)
+        search_dir="$HIST_DIR"
     else
-        files=$(find "$HIST_DIR/$HOSTNAME_SHORT" -type f)
+        search_dir="$HIST_DIR/$HOSTNAME_SHORT"
     fi
+    files=$(find "$search_dir" -type f ! -path '*/.git/*')
 
     hist_parse_and_print "" -- $files
 }
@@ -87,11 +101,13 @@ hist_grep() {
     terms=("$@")
 
     local files
+    local search_dir
     if [[ "$all" -eq 1 ]]; then
-        files=$(find "$HIST_DIR" -type f)
+        search_dir="$HIST_DIR"
     else
-        files=$(find "$HIST_DIR/$HOSTNAME_SHORT" -type f)
+        search_dir="$HIST_DIR/$HOSTNAME_SHORT"
     fi
+    files=$(find "$search_dir" -type f ! -path '*/.git/*')
 
     echo "Searching history for terms: ${terms[*]}"
 
