@@ -119,8 +119,9 @@ hist_sync() {
     cd "$HIST_DIR" || { echo "Cannot access $HIST_DIR"; return 1; }
     git add .
     git commit -m "Auto-history push from $HOSTNAME_SHORT $(date)"
-    git pull || { echo "Failed to pull latest changes"; return 1; }
-    git push
+    git pull --quiet || { echo "Failed to pull latest changes"; return 1; }
+    git push --quiet
+    echo "History synced successfully"
 }
 
 # Main entrypoint
