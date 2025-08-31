@@ -43,7 +43,7 @@ _last_hist_commit() {
         if [ $last_commit_epoch -ne 0 ]; then
             diff_days=$(( (now_epoch - last_commit_epoch) / 86400 ))
             if [ $diff_days -gt 0 ]; then
-                echo "It's been $diff_days day(s) since your last history commit. Consider running 'hist push' to back up your history."
+                echo "It's been $diff_days day(s) since your last history commit. Consider running 'hist sync' to back up your history."
             fi
         else
             echo "No commits found in history. Consider running 'hist push' to back up your history."
