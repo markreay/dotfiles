@@ -31,7 +31,7 @@ hist_usage() {
     echo "  grep <term>  Search command history"
     echo "               Options: --all, -a  Search across all machines"
     echo
-    echo "  push         Commit & push .history git repo"
+    echo "  sync         Commit & push .history git repo. Also pulls latest changes."
 }
 
 hist_parse_and_print() {
@@ -115,10 +115,11 @@ hist_grep() {
 }
 
 
-hist_push() {
+hist_sync() {
     cd "$HIST_DIR" || { echo "Cannot access $HIST_DIR"; return 1; }
     git add .
     git commit -m "Auto-history push from $HOSTNAME_SHORT $(date)"
+    git pull || { echo "Failed to pull latest changes"; return 1; }
     git push
 }
 
@@ -131,8 +132,8 @@ case "$1" in
         shift
         hist_grep "$@"
         ;;
-    push)
-        hist_push
+    sync|push)
+        hist_sync
         ;;
     recent|*)
         shift
