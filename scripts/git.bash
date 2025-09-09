@@ -29,7 +29,21 @@ export EDITOR=vim
         fi
     }
 
+    git_check_and_set_email() {
+        local key="user.email"
+        local current
+        current=$(git config --global --get "$key")
+
+        if [[ -z "$current" ]]; then
+            WARNING "$key not set"
+            FIX "git config --global $key \"$EXPECTED_USER_EMAIL\""
+        elif [[ ! "$current" =~ [Mm]ark && "$current" =~ [Rr]eay ]]; then
+            WARNING "$key is \"$current\" (should contain 'mark' and 'reay')"
+            FIX "git config --global $key \"$EXPECTED_USER_EMAIL\""
+        fi
+    }
+
     git_check_and_set init.defaultBranch "$EXPECTED_INIT_DEFAULTBRANCH"
     git_check_and_set user.name "$EXPECTED_USER_NAME"
-    git_check_and_set user.email "$EXPECTED_USER_EMAIL"
+    git_check_and_set_email
 )
