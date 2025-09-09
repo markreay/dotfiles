@@ -9,14 +9,18 @@ function check_gpg() {
         return 1;
     fi
 
-    get_gpg_fpr_by_user_id() {
+    get_gpg_signing_fpr_by_user_id() {
         local email="$1"
-        gpg --list-keys --with-colons "$email" | awk -F: '/^fpr/ { print $10; exit }'
+        gpg --list-keys --with-colons "$email" |
+            awk -F: '
+                $1=="sub" && $12 ~ /s/ {found=1} 
+                found && $1=="fpr" {print $10; exit}
+            '
     }
 
     local USER_ID=$(git config --global --get user.email)
 
-    local public_key=$(get_gpg_fpr_by_user_id $USER_ID)
+    local public_key=$(get_gpg_signing_fpr_by_user_id $USER_ID)
     if [[ -z $public_key ]]; then
         WARNING "No gpg key registered for $USER_ID"
         FIX "to fix: gpg --import private.key"
