@@ -10,3 +10,7 @@ function axe() {
         cmd.exe /c axe $*
     )
 }
+
+if [[ -f ~/local/alias.bash ]]; then
+    . ~/local/alias.bash
+fi
