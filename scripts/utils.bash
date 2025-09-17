@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Check if the current system is macOS
 is_mac_os() {
     [[ "$(uname)" == "Darwin" ]]
