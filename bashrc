@@ -24,9 +24,8 @@ then
         . ~/.dotfilesrc
     fi
     . $dir/scripts/colors.bash
-    . $dir/scripts/utils.bash
+    . $dir/scripts/os-specific.bash
     . $dir/scripts/bash.bash
-    . $dir/scripts/macos.bash
     . $dir/scripts/shared.bash
     . $dir/scripts/alias.bash
     . $dir/scripts/dircolors.bash
@@ -37,7 +36,6 @@ then
     . $dir/scripts/history.bash
     . $dir/scripts/extras.bash
     . $dir/scripts/vs-code.bash
-    . $dir/scripts/wsl.bash
     . $dir/scripts/node.bash
     . $dir/scripts/dotfiles.bash
     . $dir/scripts/password-store.bash
