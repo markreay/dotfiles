@@ -25,6 +25,7 @@ then
     fi
     . $dir/scripts/colors.bash
     . $dir/scripts/utils.bash
+    . $dir/scripts/bash.bash
     . $dir/scripts/macos.bash
     . $dir/scripts/shared.bash
     . $dir/scripts/alias.bash
