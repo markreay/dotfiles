@@ -73,6 +73,22 @@ function check_gpg() {
     check_gpg_agent_conf default-cache-ttl 86400
     check_gpg_agent_conf max-cache-ttl 86400
 
+    function check_gpg_keychain {
+        local agent_conf=~/.gnupg/gpg-agent.conf
+
+        if ! [[ -x "$(command -v pinentry-mac)" ]]; then
+            WARNING "pinentry-mac not installed"
+            FIX "brew install pinentry-mac"
+        fi
+
+        if ! grep -q "pinentry-program.*pinentry-mac" "$agent_conf" 2>/dev/null; then
+            WARNING "pinentry-mac not set in gpg-agent.conf"
+            FIX "echo 'pinentry-program /opt/homebrew/bin/pinentry-mac' >> $agent_conf"
+        fi
+    }
+
+    if is_mac_os; then check_gpg_keychain; fi
+
     # Force gpg-agent to prompt passphrase now so future commits are seamless
     echo Force passphrase entry on login | gpg --detach-sign - > /dev/null
 
