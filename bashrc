@@ -23,10 +23,10 @@ then
     if [ -e ~/.dotfilesrc ]; then
         . ~/.dotfilesrc
     fi
+    . $dir/scripts/colors.bash
     . $dir/scripts/utils.bash
     . $dir/scripts/macos.bash
     . $dir/scripts/shared.bash
-    . $dir/scripts/colors.bash
     . $dir/scripts/alias.bash
     . $dir/scripts/dircolors.bash
     . $dir/scripts/set-title.bash
