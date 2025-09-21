@@ -3,6 +3,10 @@ then
 
     export BASH_SILENCE_DEPRECATION_WARNING=1
 
+    # lockme alias
+    # this will lock the screen and require password on wake
+    alias lockme='open -a /System/Library/CoreServices/ScreenSaverEngine.app && sudo -k'
+
     # Enable Homebrew in the shell
     eval $(/opt/homebrew/bin/brew shellenv)
 
