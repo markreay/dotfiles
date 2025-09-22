@@ -3,8 +3,7 @@ if [ -n "$SSH_CONNECTION" ] && [[ ! $- =~ i ]]; then
     DOTFILES_SUPPRESS_SCRIPTS=True
 fi
 
-
-if [[ ! $DOTFILES ]] && [[ ! $DOTFILES_SUPPRESS_SCRIPTS ]]
+if [[ ! $DOTFILES_LOADED ]] && [[ ! $DOTFILES_SUPPRESS_SCRIPTS ]]
 then
     if which realpath > /dev/null 
     then

@@ -2,6 +2,8 @@ TITLE Checking dotfiles . . .
 
 export DOTFILES=$dir
 
+DOTFILES_LOADED=True
+
 (
     dirName=$(
         cd $(echo $dir)
