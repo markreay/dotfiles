@@ -17,7 +17,26 @@ md_file=$(mktemp /tmp/zbundle.XXXXXX)
 md_file="${md_file}.md"
 
 # Archive only tracked files (respects .gitignore)
-mapfile -d '' -t files < <(git ls-files -z)
+mapfile -d '' -t all_files < <(git ls-files -z)
+
+files=("${all_files[@]}")
+
+# If --pick is given, let the user choose with fzf
+if [[ "${1:-}" == "--pick" ]]; then
+  if command -v fzf &>/dev/null; then
+    printf '%s\n' "${all_files[@]}" | \
+      fzf -m --preview 'bat --style=numbers --color=always --line-range :500 {}' > /tmp/zbundle-selection || true
+    if [[ -s /tmp/zbundle-selection ]]; then
+      mapfile -t files < /tmp/zbundle-selection
+    else
+      echo "No files selected, exiting."
+      exit 0
+    fi
+  else
+    echo "fzf not installed. Cannot use --pick."
+    exit 1
+  fi
+fi
 
 # Loop over each provided file
 for file in "${files[@]}"; do
