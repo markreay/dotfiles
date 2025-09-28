@@ -20,7 +20,6 @@ then
         [fzf]="Fuzzy finder for quick navigation/search in terminal"
         [gawk]="GNU awk, extended scripting capability beyond BSD awk"
         [gh]="GitHub CLI for managing repos/issues/PRs from terminal"
-        [livekit-cli]="LiveKit tooling, only relevant if working on LiveKit projects"
         [pass]="Password manager (with gpg)"
         [pinentry-mac]="GUI pinentry for gpg/pass prompts"
         [pipenv]="Python dependency manager (virtualenv + Pipfile)"
