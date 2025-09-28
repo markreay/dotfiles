@@ -15,30 +15,30 @@ then
         # Homebrew Formulae
         # ----------------------------
         declare -A _BREW_FORMULAE=(
-        [azure-cli]="Azure tooling, needed if pushing/deploying cloud resources"
-        [bash]="Modern shell replacement for macOS’ outdated Bash"
-        [fzf]="Fuzzy finder for quick navigation/search in terminal"
-        [gawk]="GNU awk, extended scripting capability beyond BSD awk"
-        [gh]="GitHub CLI for managing repos/issues/PRs from terminal"
-        [pass]="Password manager (with gpg)"
-        [pinentry-mac]="GUI pinentry for gpg/pass prompts"
-        [pipenv]="Python dependency manager (virtualenv + Pipfile)"
-        [pipx]="Run Python apps in isolated environments"
-        [poetry]="Python project/packaging tool"
-        [pyenv-virtualenv]="Virtualenv support integrated with pyenv"
-        [tmux]="Terminal multiplexer for session persistence"
+            [azure-cli]="Azure tooling, needed if pushing/deploying cloud resources"
+            [bash]="Modern shell replacement for macOS’ outdated Bash"
+            [fzf]="Fuzzy finder for quick navigation/search in terminal"
+            [gawk]="GNU awk, extended scripting capability beyond BSD awk"
+            [gh]="GitHub CLI for managing repos/issues/PRs from terminal"
+            [pass]="Password manager (with gpg)"
+            [pinentry-mac]="GUI pinentry for gpg/pass prompts"
+            [pipenv]="Python dependency manager (virtualenv + Pipfile)"
+            [pipx]="Run Python apps in isolated environments"
+            [poetry]="Python project/packaging tool"
+            [pyenv-virtualenv]="Virtualenv support integrated with pyenv"
+            [tmux]="Terminal multiplexer for session persistence"
         )
 
         # ----------------------------
         # Homebrew Casks
         # ----------------------------
         declare -A _BREW_CASKS=(
-        [betterdisplay]="Manage display resolutions, scaling, and EDID quirks"
-        [docker]="Docker CLI tooling"
-        [docker-desktop]="Full Docker Desktop app, GUI + runtime"
-        [iterm2]="Preferred terminal emulator"
-        [github]="GitHub Desktop app for graphical repo management"
-        [rectangle]="Window manager for macOS (tiling, shortcuts)"
+            [betterdisplay]="Manage display resolutions, scaling, and EDID quirks"
+            [docker]="Docker CLI tooling"
+            [docker-desktop]="Full Docker Desktop app, GUI + runtime"
+            [iterm2]="Preferred terminal emulator"
+            [github]="GitHub Desktop app for graphical repo management"
+            [rectangle]="Window manager for macOS (tiling, shortcuts)"
         )
 
         # ----------------------------
