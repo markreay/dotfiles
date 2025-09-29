@@ -9,8 +9,29 @@ if [ -z "$git_root" ]; then
   exit 1
 fi
 
-# Go to the repo root
-cd "$git_root"
+dir="$git_root"
+pick=false
+
+# process command line args
+while [[ $# -gt 0 ]]; do
+  case $1 in
+  --dir)
+    dir="$2"
+    shift 2
+    ;;
+  --pick)
+    pick=true
+    shift
+    ;;
+  *)
+    echo "Unknown option: $1"
+    exit 1
+    ;;
+  esac
+done
+
+# Go to the repo root or selected dir
+cd "$dir"
 
 # Make a temp file for the md
 md_file=$(mktemp /tmp/zbundle.XXXXXX)
@@ -22,7 +43,7 @@ mapfile -d '' -t all_files < <(git ls-files -z)
 files=("${all_files[@]}")
 
 # If --pick is given, let the user choose with fzf
-if [[ "${1:-}" == "--pick" ]]; then
+if $pick; then
   if command -v fzf &>/dev/null; then
     printf '%s\n' "${all_files[@]}" | \
       fzf -m --preview 'bat --style=numbers --color=always --line-range :500 {}' > /tmp/zbundle-selection || true
