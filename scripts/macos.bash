@@ -15,7 +15,7 @@ then
         # Homebrew Formulae
         # ----------------------------
         declare -A _BREW_FORMULAE=(
-            [azure-cli]="Azure tooling, needed if pushing/deploying cloud resources"
+            # [azure-cli]="Azure tooling, needed if pushing/deploying cloud resources"
             [bash]="Modern shell replacement for macOS’ outdated Bash"
             [fzf]="Fuzzy finder for quick navigation/search in terminal"
             [gawk]="GNU awk, extended scripting capability beyond BSD awk"
