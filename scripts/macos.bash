@@ -22,7 +22,6 @@ then
             [gh]="GitHub CLI for managing repos/issues/PRs from terminal"
             [pass]="Password manager (with gpg)"
             [pinentry-mac]="GUI pinentry for gpg/pass prompts"
-            [pipenv]="Python dependency manager (virtualenv + Pipfile)"
             [pipx]="Run Python apps in isolated environments"
             [poetry]="Python project/packaging tool"
             [pyenv-virtualenv]="Virtualenv support integrated with pyenv"
