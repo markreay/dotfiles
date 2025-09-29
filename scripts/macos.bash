@@ -15,16 +15,12 @@ then
         # Homebrew Formulae
         # ----------------------------
         declare -A _BREW_FORMULAE=(
-            # [azure-cli]="Azure tooling, needed if pushing/deploying cloud resources"
             [bash]="Modern shell replacement for macOS’ outdated Bash"
             [fzf]="Fuzzy finder for quick navigation/search in terminal"
             [gawk]="GNU awk, extended scripting capability beyond BSD awk"
             [gh]="GitHub CLI for managing repos/issues/PRs from terminal"
             [pass]="Password manager (with gpg)"
             [pinentry-mac]="GUI pinentry for gpg/pass prompts"
-            [pipx]="Run Python apps in isolated environments"
-            [poetry]="Python project/packaging tool"
-            [pyenv-virtualenv]="Virtualenv support integrated with pyenv"
             [tmux]="Terminal multiplexer for session persistence"
         )
 
@@ -37,6 +33,16 @@ then
             [github]="GitHub Desktop app for graphical repo management"
             [rectangle]="Window manager for macOS (tiling, shortcuts)"
         )
+
+        if toolchain is-enabled Azure; then
+            _BREW_FORMULAE[azure-cli]="Azure tooling, needed if pushing/deploying cloud resources - required for Azure toolchain"
+        fi
+
+        if toolchain is-enabled Python; then
+            _BREW_FORMULAE[pipx]="Run Python apps in isolated environments - required for Python toolchain"
+            _BREW_FORMULAE[poetry]="Python project/packaging tool - required for Python toolchain"
+            _BREW_FORMULAE[pyenv-virtualenv]="Virtualenv support integrated with pyenv - required for Python toolchain"
+        fi
 
         # ----------------------------
         # Check function
