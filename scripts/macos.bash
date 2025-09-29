@@ -34,7 +34,6 @@ then
         # ----------------------------
         declare -A _BREW_CASKS=(
             [betterdisplay]="Manage display resolutions, scaling, and EDID quirks"
-            [docker]="Docker CLI tooling"
             [docker-desktop]="Full Docker Desktop app, GUI + runtime"
             [iterm2]="Preferred terminal emulator"
             [github]="GitHub Desktop app for graphical repo management"
