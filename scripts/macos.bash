@@ -81,7 +81,9 @@ then
         # ----------------------------
         # Auto-run on shell startup
         # ----------------------------
-        check_brew_deps
+        if dotfiles_run_every 1d brew-deps-check; then
+            check_brew_deps
+        fi
     )
 
     (

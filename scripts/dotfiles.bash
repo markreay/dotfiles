@@ -15,6 +15,22 @@ DOTFILES_LOADED=True
         git status --porcelain -b --ignore-submodules
     }
 
+    if dotfiles_run_every 18h dotfiles-update-check; then
+        (
+            cd $dir
+            if [ -e .git ]; then
+                git fetch --all -q
+                local=$(git rev-parse @)
+                remote=$(git rev-parse @{u})
+                base=$(git merge-base @ @{u})
+                
+                if [ $local != $remote ] && [ $local = $base ]; then
+                    echo "📦 Dotfiles: Updates available. Run 'dot pull' to update."
+                fi
+            fi
+        )
+    fi
+
     cd $dir
     if [ -e .git ]; then
         git fetch --all -q

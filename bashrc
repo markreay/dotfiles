@@ -23,6 +23,7 @@ then
         . ~/.dotfilesrc
     fi
     . $dir/scripts/colors.bash
+    . $dir/scripts/util/cache-helper.bash
     . $dir/scripts/dotfiles.bash
     . $dir/scripts/toolchain.bash
     . $dir/scripts/os-specific.bash

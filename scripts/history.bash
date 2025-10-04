@@ -52,5 +52,16 @@ _last_hist_commit() {
         echo "No git repository found in $HISTPATH. Consider initializing one and running 'hist push' to back up your history."
     fi
 }
-_last_hist_commit
+
+if dotfiles_run_every 1d hist-commit-check; then
+    (
+        if [[ -d "$HISTPATH/.git" ]]; then
+            cd "$HISTPATH" || exit
+            last_commit_date=$(git log -1 --format="%cr" 2>/dev/null)
+            if [[ -n "$last_commit_date" ]]; then
+                echo "📝 Last history commit: $last_commit_date"
+            fi
+        fi
+    )
+fi
 
