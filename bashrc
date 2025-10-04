@@ -41,5 +41,6 @@ then
     . $dir/scripts/password-store.bash
     . $dir/scripts/prompt.bash
     . $dir/scripts/python.bash
+    . $dir/scripts/tmux.bash
     INFO "                                                                      "
 fi
