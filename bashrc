@@ -23,6 +23,7 @@ then
         . ~/.dotfilesrc
     fi
     . $dir/scripts/colors.bash
+    . $dir/scripts/dotfiles.bash
     . $dir/scripts/toolchain.bash
     . $dir/scripts/os-specific.bash
     . $dir/scripts/bash.bash
@@ -37,7 +38,6 @@ then
     . $dir/scripts/extras.bash
     . $dir/scripts/vs-code.bash
     . $dir/scripts/node.bash
-    . $dir/scripts/dotfiles.bash
     . $dir/scripts/password-store.bash
     . $dir/scripts/prompt.bash
     . $dir/scripts/python.bash
