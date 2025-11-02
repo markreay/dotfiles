@@ -1,31 +1,38 @@
 #!/usr/bin/env bash
-# t – tmux swiss army knife (session manager + template launcher)
+# t – tmux swiss army knife (cached templates + pane/window launcher)
 
 # --- Colors & Symbols ---
-GREEN="\033[1;32m"
-YELLOW="\033[1;33m"
-GRAY="\033[0;37m"
-RESET="\033[0m"
-RUNNING_ICON="▶"
-TEMPLATE_ICON="●"
-ADHOC_ICON="○"
+GREEN="\033[1;32m"; YELLOW="\033[1;33m"; GRAY="\033[0;37m"; RESET="\033[0m"
+RUNNING_ICON="▶"; TEMPLATE_ICON="●"; ADHOC_ICON="○"
 
 inside_tmux=$(tmux display-message -p '#{client_name}' 2>/dev/null)
 
-# Collect running sessions
-running_sessions=$(tmux ls -F '#{session_name}' 2>/dev/null | sort -u)
+# --- Template cache ---
+CACHE_DIR="$HOME/.cache/dotfiles/t"
+CACHE_FILE="$CACHE_DIR/templates.txt"
+CACHE_TTL=$((18 * 60 * 60)) # 18 hours
 
-# Collect templates
-template_dirs=$(find ~/src -maxdepth 3 -type f -name tmux-session.conf -exec dirname {} \; | sort -u)
+mkdir -p "$CACHE_DIR"
+
+rebuild_cache() {
+  echo "🔍 Rebuilding template cache..."
+  find ~/src -maxdepth 3 -type f -name tmux-session.conf -exec dirname {} \; | sort -u > "$CACHE_FILE"
+}
+
+if [[ ! -f "$CACHE_FILE" ]] || (( $(date +%s) - $(date -r "$CACHE_FILE" +%s) > CACHE_TTL )); then
+  rebuild_cache
+fi
+
+template_dirs=$(cat "$CACHE_FILE")
 template_names=$(basename -a $template_dirs 2>/dev/null | sort -u)
 
-# Combine all known names
+running_sessions=$(tmux ls -F '#{session_name}' 2>/dev/null | sort -u)
 all_names=$(printf "%s\n%s\n" "$running_sessions" "$template_names" | sort -u)
 
-# Build combined list with icons and color cues
+# --- Build menu ---
 combined=$(
   for n in $all_names; do
-    has_conf=$(find ~/src -maxdepth 3 -type f -path "*/$n/tmux-session.conf" -print -quit)
+    has_conf=$(grep -Fx "$HOME/src/$n" "$CACHE_FILE" 2>/dev/null || true)
     if echo "$running_sessions" | grep -qx "$n"; then
       if [ -n "$has_conf" ]; then
         printf "${GREEN}${RUNNING_ICON}${RESET}  %-18s → Switch to (template)\n" "$n"
@@ -42,17 +49,23 @@ combined=$(
   done
 )
 
-# Present fzf menu
 session=$( (echo -e "$combined"
             [ -n "$inside_tmux" ] && echo "⏏️  Detach"
             [ -n "$inside_tmux" ] && echo "✏️  Rename Current Session"
+            echo "♻️  Reread Template Cache"
             echo "➕  New Session") \
   | fzf --ansi --height 40% --reverse --prompt='tmux session > ' --border --no-sort) || exit 0
 
-# Extract plain session name
 name=$(awk '{print $2}' <<< "$session")
 
 case "$session" in
+  *"Reread Template Cache"*)
+    rebuild_cache
+    echo "✅ Template cache refreshed."
+    sleep 1
+    exec "$0"
+    ;;
+
   *"New Session"*)
     read -rp "Enter new session name: " newname
     if [ -n "$inside_tmux" ]; then
@@ -75,15 +88,10 @@ case "$session" in
 
   *)
     if tmux has-session -t "$name" 2>/dev/null; then
-      if [ -n "$inside_tmux" ]; then
-        tmux switch-client -t "$name"
-      else
-        tmux attach -t "$name"
-      fi
+      [ -n "$inside_tmux" ] && tmux switch-client -t "$name" || tmux attach -t "$name"
       exit 0
     fi
 
-    # Launch from template
     conf_path=$(find ~/src -maxdepth 3 -type f -name tmux-session.conf -path "*/$name/*" -print -quit)
     if [[ -n "$conf_path" ]]; then
       echo -e "${YELLOW}⚙️  Creating new session from template:${RESET} $name"
@@ -92,20 +100,20 @@ case "$session" in
 
       if ! tmux has-session -t "$SESSION" 2>/dev/null; then
         if [[ -n "${PANES[*]}" ]]; then
-          # Pane mode
           tmux new-session -d -s "$SESSION" -c "$dir" -n $(cut -d: -f1 <<< "${PANES[0]}")
           first_cmd=$(cut -d: -f2- <<< "${PANES[0]}")
           [[ -n "$first_cmd" ]] && tmux send-keys -t "$SESSION:0" "$first_cmd" C-m
 
-          for i in "${PANES[@]:1}"; do
-            cmd=$(cut -d: -f2- <<< "$i")
-            tmux split-window -t "$SESSION:0" -v -c "$dir"
-            [[ -n "$cmd" ]] && tmux send-keys -t "$SESSION:0" "$cmd" C-m
-            tmux select-layout -t "$SESSION:0" tiled
-          done
+          if ((${#PANES[@]} > 1)); then
+            for i in "${PANES[@]:1}"; do
+              cmd=$(cut -d: -f2- <<< "$i")
+              tmux split-window -t "$SESSION:0" -v -c "$dir"
+              [[ -n "$cmd" ]] && tmux send-keys -t "$SESSION:0" "$cmd" C-m
+              tmux select-layout -t "$SESSION:0" tiled
+            done
+          fi
 
         elif [[ -n "${WINDOWS[*]}" ]]; then
-          # Window mode
           tmux new-session -d -s "$SESSION" -c "$dir" -n $(cut -d: -f1 <<< "${WINDOWS[0]}")
           first_cmd=$(cut -d: -f2- <<< "${WINDOWS[0]}")
           [[ -n "$first_cmd" ]] && tmux send-keys -t "$SESSION:0" "$first_cmd" C-m
@@ -121,11 +129,7 @@ case "$session" in
         fi
       fi
 
-      if [ -n "$inside_tmux" ]; then
-        tmux switch-client -t "$SESSION"
-      else
-        tmux attach -t "$SESSION"
-      fi
+      [ -n "$inside_tmux" ] && tmux switch-client -t "$SESSION" || tmux attach -t "$SESSION"
       tmux select-layout -t "$SESSION:0" tiled
       exit 0
     else
