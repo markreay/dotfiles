@@ -49,7 +49,7 @@ session=$( (echo -e "$combined"
             echo "➕  New Session") \
   | fzf --ansi --height 40% --reverse --prompt='tmux session > ' --border --no-sort) || exit 0
 
-# Extract plain session name from selection
+# Extract plain session name
 name=$(awk '{print $2}' <<< "$session")
 
 case "$session" in
@@ -75,7 +75,6 @@ case "$session" in
 
   *)
     if tmux has-session -t "$name" 2>/dev/null; then
-      # Attach or switch to running session
       if [ -n "$inside_tmux" ]; then
         tmux switch-client -t "$name"
       else
@@ -84,7 +83,7 @@ case "$session" in
       exit 0
     fi
 
-    # If it's a template, start it
+    # Launch from template
     conf_path=$(find ~/src -maxdepth 3 -type f -name tmux-session.conf -path "*/$name/*" -print -quit)
     if [[ -n "$conf_path" ]]; then
       echo -e "${YELLOW}⚙️  Creating new session from template:${RESET} $name"
@@ -92,17 +91,34 @@ case "$session" in
       source "$conf_path"
 
       if ! tmux has-session -t "$SESSION" 2>/dev/null; then
-        tmux new-session -d -s "$SESSION" -c "$dir" -n $(cut -d: -f1 <<< "${WINDOWS[0]}")
-        first_cmd=$(cut -d: -f2- <<< "${WINDOWS[0]}")
-        [[ -n "$first_cmd" ]] && tmux send-keys -t "$SESSION:0" "$first_cmd" C-m
+        if [[ -n "${PANES[*]}" ]]; then
+          # Pane mode
+          tmux new-session -d -s "$SESSION" -c "$dir" -n $(cut -d: -f1 <<< "${PANES[0]}")
+          first_cmd=$(cut -d: -f2- <<< "${PANES[0]}")
+          [[ -n "$first_cmd" ]] && tmux send-keys -t "$SESSION:0" "$first_cmd" C-m
 
-        for i in "${WINDOWS[@]:1}"; do
-          name=$(cut -d: -f1 <<< "$i")
-          dir=$(cut -d: -f3 <<< "$i")
-          cmd=$(cut -d: -f2- <<< "$i")
-          tmux new-window -t "$SESSION:" -n "$name" -c "$dir"
-          [[ -n "$cmd" ]] && tmux send-keys -t "$SESSION:$name" "$cmd" C-m
-        done
+          for i in "${PANES[@]:1}"; do
+            cmd=$(cut -d: -f2- <<< "$i")
+            tmux split-window -t "$SESSION:0" -v -c "$dir"
+            [[ -n "$cmd" ]] && tmux send-keys -t "$SESSION:0" "$cmd" C-m
+            tmux select-layout -t "$SESSION:0" tiled
+          done
+
+        elif [[ -n "${WINDOWS[*]}" ]]; then
+          # Window mode
+          tmux new-session -d -s "$SESSION" -c "$dir" -n $(cut -d: -f1 <<< "${WINDOWS[0]}")
+          first_cmd=$(cut -d: -f2- <<< "${WINDOWS[0]}")
+          [[ -n "$first_cmd" ]] && tmux send-keys -t "$SESSION:0" "$first_cmd" C-m
+
+          for i in "${WINDOWS[@]:1}"; do
+            name=$(cut -d: -f1 <<< "$i")
+            dir=$(cut -d: -f3 <<< "$i")
+            cmd=$(cut -d: -f2- <<< "$i")
+            [[ -d "$dir" ]] || dir="$root_dir/$dir"
+            tmux new-window -t "$SESSION:" -n "$name" -c "$dir"
+            [[ -n "$cmd" ]] && tmux send-keys -t "$SESSION:$name" "$cmd" C-m
+          done
+        fi
       fi
 
       if [ -n "$inside_tmux" ]; then
@@ -110,8 +126,7 @@ case "$session" in
       else
         tmux attach -t "$SESSION"
       fi
-
-      tmux select-window -t "$SESSION:1"
+      tmux select-layout -t "$SESSION:0" tiled
       exit 0
     else
       echo "❌ No tmux-session.conf found for '$name'"
