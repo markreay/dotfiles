@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+repo="$1"
+
+conf_path=$(find ~/src -maxdepth 3 -type f -name tmux-session.conf -path "*/$repo/*" -print -quit)
+
+if [[ -z "$conf_path" ]]; then
+    echo "❌ No tmux-session.conf found for '$repo'"
+    exit 1
+fi
+
+echo "Using config: $conf_path"
+
+dir=$(dirname "$conf_path")
+source "$conf_path"
+
+if ! tmux has-session -t "$SESSION" 2>/dev/null; then
+    # Start new session
+    tmux new-session -d -s "$SESSION" -c "$dir" -n $(cut -d: -f1 <<< "${WINDOWS[0]}")
+    first_cmd=$(cut -d: -f2- <<< "${WINDOWS[0]}")
+    [[ -n "$first_cmd" ]] && tmux send-keys -t "$SESSION:0" "$first_cmd" C-m
+
+    for i in "${WINDOWS[@]:1}"; do
+        name=$(cut -d: -f1 <<< "$i")
+        if [[ "$i" == *:* ]]; then
+            dir=$(cut -d: -f3 <<< "$i")
+            cmd=$(cut -d: -f2- <<< "$i")
+        else
+            dir="$i"
+            cmd=""
+        fi
+        tmux new-window -t "$SESSION:" -n "$name" -c "$dir"
+        [[ -n "$cmd" ]] && tmux send-keys -t "$SESSION:$name" "$cmd" C-m
+    done
+fi
+
+if [[ -n "$TMUX" ]]; then
+    tmux switch-client -t "$SESSION"
+else
+    tmux attach -t "$SESSION"
+fi
+
+# Switch to window 1
+tmux select-window -t "$SESSION:1"

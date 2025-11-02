@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# tmux swiss army knife
+
+inside_tmux=$(tmux display-message -p '#{client_name}' 2>/dev/null)
+
+session=$( (tmux ls -F '#{session_name}' 2>/dev/null
+            [ -n "$inside_tmux" ] && echo "⏏️  Detach"
+            [ -n "$inside_tmux" ] && echo "✏️  Rename Current Session"
+            echo "➕ New Session") \
+  | fzf --height 40% --reverse --prompt='tmux session > ' --border --no-sort) || exit 0
+
+case "$session" in
+  "➕ New Session")
+    read -rp "Enter new session name: " newname
+    if [ -n "$inside_tmux" ]; then
+      [ -n "$newname" ] && tmux new-session -d -s "$newname" && tmux switch-client -t "$newname" \
+                        || { tmux new-session -d && tmux switch-client -t "$(tmux display-message -p '#S')" ; }
+    else
+      [ -n "$newname" ] && tmux new -s "$newname" || tmux new
+    fi
+    ;;
+
+  "✏️  Rename Current Session")
+    current=$(tmux display-message -p '#S')
+    read -rp "Rename current session ('$current') to: " newname
+    [ -n "$newname" ] && tmux rename-session -t "$current" "$newname"
+    ;;
+
+  "⏏️  Detach")
+    tmux detach-client
+    ;;
+
+  *)
+    if [ -n "$inside_tmux" ]; then
+      tmux switch-client -t "$session"
+    else
+      tmux attach -t "$session"
+    fi
+    ;;
+esac
