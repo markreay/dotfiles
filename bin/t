@@ -72,7 +72,11 @@ case "$session" in
       [ -n "$newname" ] && tmux new-session -d -s "$newname" && tmux switch-client -t "$newname" \
         || { tmux new-session -d && tmux switch-client -t "$(tmux display-message -p '#S')"; }
     else
-      [ -n "$newname" ] && tmux new -s "$newname" || tmux new
+      if [ -n "$newname" ]; then
+        exec tmux new -s "$newname"
+      else
+        exec tmux new
+      fi
     fi
     ;;
 
@@ -88,8 +92,12 @@ case "$session" in
 
   *)
     if tmux has-session -t "$name" 2>/dev/null; then
-      [ -n "$inside_tmux" ] && tmux switch-client -t "$name" || tmux attach -t "$name"
-      exit 0
+      if [ -n "$inside_tmux" ]; then
+        tmux switch-client -t "$name"
+      else
+        exec tmux attach -t "$name"
+      fi
+      # No exit needed; exec replaces the shell
     fi
 
     conf_path=$(find ~/src -maxdepth 3 -type f -name tmux-session.conf -path "*/$name/*" -print -quit)
@@ -129,9 +137,12 @@ case "$session" in
         fi
       fi
 
-      [ -n "$inside_tmux" ] && tmux switch-client -t "$SESSION" || tmux attach -t "$SESSION"
+      if [ -n "$inside_tmux" ]; then
+        tmux switch-client -t "$SESSION"
+      else
+        exec tmux attach -t "$SESSION"
+      fi
       tmux select-layout -t "$SESSION:0" tiled
-      exit 0
     else
       echo "❌ No tmux-session.conf found for '$name'"
     fi
