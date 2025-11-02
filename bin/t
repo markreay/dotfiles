@@ -1,40 +1,120 @@
 #!/usr/bin/env bash
-# tmux swiss army knife
+# t – tmux swiss army knife (session manager + template launcher)
+
+# --- Colors & Symbols ---
+GREEN="\033[1;32m"
+YELLOW="\033[1;33m"
+GRAY="\033[0;37m"
+RESET="\033[0m"
+RUNNING_ICON="▶"
+TEMPLATE_ICON="●"
+ADHOC_ICON="○"
 
 inside_tmux=$(tmux display-message -p '#{client_name}' 2>/dev/null)
 
-session=$( (tmux ls -F '#{session_name}' 2>/dev/null
+# Collect running sessions
+running_sessions=$(tmux ls -F '#{session_name}' 2>/dev/null | sort -u)
+
+# Collect templates
+template_dirs=$(find ~/src -maxdepth 3 -type f -name tmux-session.conf -exec dirname {} \; | sort -u)
+template_names=$(basename -a $template_dirs 2>/dev/null | sort -u)
+
+# Combine all known names
+all_names=$(printf "%s\n%s\n" "$running_sessions" "$template_names" | sort -u)
+
+# Build combined list with icons and color cues
+combined=$(
+  for n in $all_names; do
+    has_conf=$(find ~/src -maxdepth 3 -type f -path "*/$n/tmux-session.conf" -print -quit)
+    if echo "$running_sessions" | grep -qx "$n"; then
+      if [ -n "$has_conf" ]; then
+        printf "${GREEN}${RUNNING_ICON}${RESET}  %-18s → Switch to (template)\n" "$n"
+      else
+        printf "${GREEN}${RUNNING_ICON}${RESET}  %-18s → Switch to (ad-hoc)\n" "$n"
+      fi
+    else
+      if [ -n "$has_conf" ]; then
+        printf "${YELLOW}${TEMPLATE_ICON}${RESET}  %-18s → Start (template)\n" "$n"
+      else
+        printf "${GRAY}${ADHOC_ICON}${RESET}  %-18s → Unknown\n" "$n"
+      fi
+    fi
+  done
+)
+
+# Present fzf menu
+session=$( (echo -e "$combined"
             [ -n "$inside_tmux" ] && echo "⏏️  Detach"
             [ -n "$inside_tmux" ] && echo "✏️  Rename Current Session"
-            echo "➕ New Session") \
-  | fzf --height 40% --reverse --prompt='tmux session > ' --border --no-sort) || exit 0
+            echo "➕  New Session") \
+  | fzf --ansi --height 40% --reverse --prompt='tmux session > ' --border --no-sort) || exit 0
+
+# Extract plain session name from selection
+name=$(awk '{print $2}' <<< "$session")
 
 case "$session" in
-  "➕ New Session")
+  *"New Session"*)
     read -rp "Enter new session name: " newname
     if [ -n "$inside_tmux" ]; then
       [ -n "$newname" ] && tmux new-session -d -s "$newname" && tmux switch-client -t "$newname" \
-                        || { tmux new-session -d && tmux switch-client -t "$(tmux display-message -p '#S')" ; }
+        || { tmux new-session -d && tmux switch-client -t "$(tmux display-message -p '#S')"; }
     else
       [ -n "$newname" ] && tmux new -s "$newname" || tmux new
     fi
     ;;
 
-  "✏️  Rename Current Session")
+  *"Rename Current Session"*)
     current=$(tmux display-message -p '#S')
     read -rp "Rename current session ('$current') to: " newname
     [ -n "$newname" ] && tmux rename-session -t "$current" "$newname"
     ;;
 
-  "⏏️  Detach")
+  *"Detach"*)
     tmux detach-client
     ;;
 
   *)
-    if [ -n "$inside_tmux" ]; then
-      tmux switch-client -t "$session"
+    if tmux has-session -t "$name" 2>/dev/null; then
+      # Attach or switch to running session
+      if [ -n "$inside_tmux" ]; then
+        tmux switch-client -t "$name"
+      else
+        tmux attach -t "$name"
+      fi
+      exit 0
+    fi
+
+    # If it's a template, start it
+    conf_path=$(find ~/src -maxdepth 3 -type f -name tmux-session.conf -path "*/$name/*" -print -quit)
+    if [[ -n "$conf_path" ]]; then
+      echo -e "${YELLOW}⚙️  Creating new session from template:${RESET} $name"
+      dir=$(dirname "$conf_path")
+      source "$conf_path"
+
+      if ! tmux has-session -t "$SESSION" 2>/dev/null; then
+        tmux new-session -d -s "$SESSION" -c "$dir" -n $(cut -d: -f1 <<< "${WINDOWS[0]}")
+        first_cmd=$(cut -d: -f2- <<< "${WINDOWS[0]}")
+        [[ -n "$first_cmd" ]] && tmux send-keys -t "$SESSION:0" "$first_cmd" C-m
+
+        for i in "${WINDOWS[@]:1}"; do
+          name=$(cut -d: -f1 <<< "$i")
+          dir=$(cut -d: -f3 <<< "$i")
+          cmd=$(cut -d: -f2- <<< "$i")
+          tmux new-window -t "$SESSION:" -n "$name" -c "$dir"
+          [[ -n "$cmd" ]] && tmux send-keys -t "$SESSION:$name" "$cmd" C-m
+        done
+      fi
+
+      if [ -n "$inside_tmux" ]; then
+        tmux switch-client -t "$SESSION"
+      else
+        tmux attach -t "$SESSION"
+      fi
+
+      tmux select-window -t "$SESSION:1"
+      exit 0
     else
-      tmux attach -t "$session"
+      echo "❌ No tmux-session.conf found for '$name'"
     fi
     ;;
 esac
