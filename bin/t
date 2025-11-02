@@ -23,24 +23,65 @@ if [[ ! -f "$CACHE_FILE" ]] || (( $(date +%s) - $(date -r "$CACHE_FILE" +%s) > C
   rebuild_cache
 fi
 
-template_dirs=$(cat "$CACHE_FILE")
-template_names=$(basename -a $template_dirs 2>/dev/null | sort -u)
+template_dirs=()
+if [[ -f "$CACHE_FILE" ]]; then
+  while IFS= read -r dir; do
+    [[ -n "$dir" ]] && template_dirs+=("$dir")
+  done < "$CACHE_FILE"
+fi
 
-running_sessions=$(tmux ls -F '#{session_name}' 2>/dev/null | sort -u)
-all_names=$(printf "%s\n%s\n" "$running_sessions" "$template_names" | sort -u)
+template_names=()
+for dir in "${template_dirs[@]}"; do
+  template_names+=("$(basename "$dir")")
+done
+if ((${#template_names[@]})); then
+  sorted_names=$(printf '%s\n' "${template_names[@]}" | sort -u)
+  template_names=()
+  while IFS= read -r name; do
+    [[ -n "$name" ]] && template_names+=("$name")
+  done <<< "$sorted_names"
+fi
+
+running_sessions=()
+while IFS= read -r session; do
+  [[ -n "$session" ]] && running_sessions+=("$session")
+done < <(tmux ls -F '#{session_name}' 2>/dev/null | sort -u)
+
+all_names=()
+combined_names=$(printf '%s\n' "${running_sessions[@]}" "${template_names[@]}" | sort -u)
+while IFS= read -r name; do
+  [[ -n "$name" ]] && all_names+=("$name")
+done <<< "$combined_names"
 
 # --- Build menu ---
 combined=$(
-  for n in $all_names; do
-    has_conf=$(grep -Fx "$HOME/src/$n" "$CACHE_FILE" 2>/dev/null || true)
-    if echo "$running_sessions" | grep -qx "$n"; then
-      if [ -n "$has_conf" ]; then
+  for n in "${all_names[@]}"; do
+    [[ -z "$n" ]] && continue
+
+    template_dir=""
+    for dir in "${template_dirs[@]}"; do
+      if [[ "$(basename "$dir")" == "$n" ]]; then
+        template_dir="$dir"
+        break
+      fi
+    done
+
+    is_running=false
+    for session in "${running_sessions[@]}"; do
+      if [[ "$session" == "$n" ]]; then
+        is_running=true
+        break
+      fi
+    done
+
+    if $is_running; then
+      if [[ -n "$template_dir" ]]; then
         printf "${GREEN}${RUNNING_ICON}${RESET}  %-18s → Switch to (template)\n" "$n"
       else
         printf "${GREEN}${RUNNING_ICON}${RESET}  %-18s → Switch to (ad-hoc)\n" "$n"
       fi
     else
-      if [ -n "$has_conf" ]; then
+      if [[ -n "$template_dir" ]]; then
         printf "${YELLOW}${TEMPLATE_ICON}${RESET}  %-18s → Start (template)\n" "$n"
       else
         printf "${GRAY}${ADHOC_ICON}${RESET}  %-18s → Unknown\n" "$n"
@@ -56,7 +97,7 @@ session=$( (echo -e "$combined"
             echo "➕  New Session") \
   | fzf --ansi --height 40% --reverse --prompt='tmux session > ' --border --no-sort) || exit 0
 
-name=$(awk '{print $2}' <<< "$session")
+name=$(sed -E 's/^[^[:space:]]+[[:space:]]+([^[:space:]].*[^[:space:]])[[:space:]]+→.*/\1/' <<< "$session" | sed 's/[[:space:]]*$//')
 
 case "$session" in
   *"Reread Template Cache"*)
