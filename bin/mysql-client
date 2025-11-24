@@ -1,0 +1,18 @@
+#! /usr/bin/env bash
+
+get_aliases() {
+    grep '^\[client' ~/.my.cnf | grep -v '^\[client\]$' | sed 's/\[client//;s/\]//'
+}
+
+if [ -z "$1" ]; then
+    # No argument - use fzf to select
+    alias=$(get_aliases | fzf --prompt="MySQL> " --height=40%)
+    if [ -z "$alias" ]; then
+        echo "No selection made"
+        exit 1
+    fi
+else
+    alias="$1"
+fi
+
+mysql --defaults-group-suffix=$alias
