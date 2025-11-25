@@ -15,4 +15,4 @@ else
     alias="$1"
 fi
 
-mysql --defaults-group-suffix=$alias
+mysql --defaults-group-suffix=$alias --prompt="[$alias] mysql> "
