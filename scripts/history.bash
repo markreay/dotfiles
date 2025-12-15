@@ -26,9 +26,24 @@ shopt -s histappend
 HISTSIZE=100000
 HISTFILESIZE=200000
 
-# Write history after each command
+# Write history after each command and check for date rollover
 _bash_history_append() {
-    builtin history -a
+    local current_date=$(date +%Y-%m-%d)
+    local current_tty=$(tty | sed 's/\///g;s/^dev//g')
+    local expected_histfile="$HISTPATH/${current_date}_${current_tty}"
+    
+    # If date changed, switch to new history file
+    if [[ "$HISTFILE" != "$expected_histfile" ]]; then
+        # Save current history
+        builtin history -a
+        # Switch to new file
+        HISTFILE="$expected_histfile"
+        # Load any existing history from new file
+        builtin history -r
+    else
+        # Normal append
+        builtin history -a
+    fi
 }
 
 if [[ "$PROMPT_COMMAND" != *"_bash_history_append"* ]]; then
