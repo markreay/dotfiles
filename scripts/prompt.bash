@@ -26,7 +26,7 @@ __prompt_git_file_count_cached() {
     
     # Recalculate if cache missing or .git/index changed
     if [ ! -f "$cache_file" ] || [ "$git_index" -nt "$cache_file" ]; then
-        git ls-files 2>/dev/null | wc -l | tr -d ' ' > "$cache_file"
+        git ls-files "$repo_root" 2>/dev/null | wc -l | tr -d ' ' > "$cache_file"
     fi
     
     cat "$cache_file"
