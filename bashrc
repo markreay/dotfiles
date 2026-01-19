@@ -2,6 +2,10 @@
 if [ -n "$SSH_CONNECTION" ] && [[ ! $- =~ i ]]; then
     DOTFILES_SUPPRESS_SCRIPTS=True
 fi
+# suppress dotfiles output for Claude Code
+if [ -n "$CLAUDECODE" ]; then
+    DOTFILES_SUPPRESS_SCRIPTS=True
+fi
 
 if [[ ! $DOTFILES_LOADED ]] && [[ ! $DOTFILES_SUPPRESS_SCRIPTS ]]
 then
