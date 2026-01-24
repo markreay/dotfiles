@@ -41,6 +41,33 @@ function check-ssh-agent {
     unset SSH_AUTH_SOCK SSH_AGENT_PID
   fi
 
+  if [[ -d "$HOME/.ssh" ]]; then
+    local ssh_dir="$HOME/.ssh"
+    local ssh_mode
+    ssh_mode=$(stat_mode "$ssh_dir" || true)
+    if [[ -n "$ssh_mode" && $ssh_mode -gt 700 ]]; then
+      WARNING "ssh dir permissions too open: $ssh_dir ($ssh_mode)"
+      WARNING "to fix: chmod 700 $ssh_dir"
+    fi
+
+    local ssh_file
+    for ssh_file in "$ssh_dir"/config \
+                    "$ssh_dir"/authorized_keys \
+                    "$ssh_dir"/known_hosts \
+                    "$ssh_dir"/environment \
+                    "$ssh_dir"/id_rsa \
+                    "$ssh_dir"/id_ed25519; do
+      if [[ -e "$ssh_file" ]]; then
+        local ssh_file_mode
+        ssh_file_mode=$(stat_mode "$ssh_file" || true)
+        if [[ -n "$ssh_file_mode" && $ssh_file_mode -gt 600 ]]; then
+          WARNING "ssh file permissions too open: $ssh_file ($ssh_file_mode)"
+          WARNING "to fix: chmod 600 $ssh_file"
+        fi
+      fi
+    done
+  fi
+
   ssh-add -l &> /dev/null
   if [[ "$?" == 2 ]]; then
     # Try to restart ssh-agent
