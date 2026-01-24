@@ -7,6 +7,12 @@ function check-ssh-agent {
 
   SSH_ENV="$HOME/.ssh/environment"
   SSH_ADD_ARGS=""
+  SSH_AUTH_SOCK_PATH="$HOME/.ssh/ssh_auth_sock"
+
+  # Prefer stable socket path when available.
+  if [[ -S "$SSH_AUTH_SOCK_PATH" ]]; then
+    export SSH_AUTH_SOCK="$SSH_AUTH_SOCK_PATH"
+  fi
 
   # Load SSH identities from ssh config
   mapfile -t identity_files < <(awk '/^[[:space:]]*IdentityFile/ {print $2}' ~/.ssh/config | sed 's~^~/~')
@@ -30,11 +36,21 @@ function check-ssh-agent {
     fi
   fi
 
+  # Drop stale or inaccessible socket paths.
+  if [[ -n "${SSH_AUTH_SOCK:-}" && ! -S "$SSH_AUTH_SOCK" ]]; then
+    unset SSH_AUTH_SOCK SSH_AGENT_PID
+  fi
+
   ssh-add -l &> /dev/null
   if [[ "$?" == 2 ]]; then
     # Try to restart ssh-agent
-    (umask 066; /usr/bin/ssh-agent | sed 's/^echo/#echo/' > "${SSH_ENV}")
+    (umask 066; /usr/bin/ssh-agent -a "$SSH_AUTH_SOCK_PATH" | sed 's/^echo/#echo/' > "${SSH_ENV}")
     . "${SSH_ENV}" > /dev/null
+    export SSH_AUTH_SOCK="$SSH_AUTH_SOCK_PATH"
+    {
+      echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK_PATH; export SSH_AUTH_SOCK;"
+      echo "SSH_AGENT_PID=$SSH_AGENT_PID; export SSH_AGENT_PID;"
+    } > "${SSH_ENV}"
   fi
 
   ssh-add -l &> /dev/null
