@@ -36,7 +36,6 @@ then
     for util_script in "$dir"/scripts/util/*.bash; do
         [ -r "$util_script" ] && . "$util_script"
     done
-    . $dir/scripts/dotfiles.bash
     . $dir/scripts/toolchain.bash
     . $dir/scripts/os-specific.bash
     . $dir/scripts/bash.bash
@@ -45,6 +44,7 @@ then
     . $dir/scripts/dircolors.bash
     . $dir/scripts/set-title.bash
     . $dir/scripts/ssh-agent.bash
+    . $dir/scripts/dotfiles.bash
     . $dir/scripts/git.bash
     . $dir/scripts/gnupg.bash
     . $dir/scripts/history.bash
