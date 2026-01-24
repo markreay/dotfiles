@@ -9,4 +9,5 @@ platform is present.
   or `scripts/wsl.bash`, not scattered throughout general scripts.
 - Avoid hardcoded paths like `/opt/homebrew` outside macOS-specific scripts.
 - Detect platform via `uname`/`OSTYPE`/`WSL_DISTRO_NAME` and provide fallbacks.
-- Use feature checks (`command -v`, file exists) before invoking tools.
+- Assume repo-provided utilities are present; avoid defensive checks for them.
+- Use feature checks (`command -v`, file exists) for external tools only.
