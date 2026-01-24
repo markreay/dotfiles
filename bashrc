@@ -32,7 +32,10 @@ then
         . ~/.dotfilesrc
     fi
     . $dir/scripts/colors.bash
-    . $dir/scripts/util/cache-helper.bash
+    # Load util helpers early, in deterministic order.
+    for util_script in "$dir"/scripts/util/*.bash; do
+        [ -r "$util_script" ] && . "$util_script"
+    done
     . $dir/scripts/dotfiles.bash
     . $dir/scripts/toolchain.bash
     . $dir/scripts/os-specific.bash

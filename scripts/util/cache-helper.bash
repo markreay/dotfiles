@@ -5,6 +5,13 @@
 # Duration examples: 30m, 2h, 1d, 18h
 # Returns: 0 (true) if should run, 1 (false) if cached
 
+if [[ -z "${DOTFILES_STAT_HELPERS_LOADED:-}" ]]; then
+    _stat_helper_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    # shellcheck source=/dev/null
+    . "${_stat_helper_dir}/stat.bash"
+    unset _stat_helper_dir
+fi
+
 dotfiles_run_every() {
     local duration="$1"
     local operation_name="$2"
@@ -29,12 +36,13 @@ dotfiles_run_every() {
     
     # Check if cache exists and is still valid
     if [[ -f "$cache_file" ]]; then
-        local last_run=$(stat -f %m "$cache_file" 2>/dev/null || stat -c %Y "$cache_file" 2>/dev/null)
-        local now=$(date +%s)
-        local age=$((now - last_run))
-        
-        if (( age < duration_seconds )); then
-            return 1  # Don't run (cached)
+        local last_run=""
+        if last_run=$(stat_mtime "$cache_file"); then
+            local now=$(date +%s)
+            local age=$((now - last_run))
+            if (( age < duration_seconds )); then
+                return 1  # Don't run (cached)
+            fi
         fi
     fi
     
