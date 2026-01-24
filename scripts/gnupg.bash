@@ -9,6 +9,54 @@ function check_gpg() {
         return 1;
     fi
 
+    local gnupg_dir="$HOME/.gnupg"
+    local trustdb="$gnupg_dir/trustdb.gpg"
+    if [[ -d "$gnupg_dir" ]]; then
+        if [[ -e "$trustdb" && ! -w "$trustdb" ]]; then
+            WARNING "gpg trustdb is not writable: $trustdb"
+            FIX "to fix: chmod 600 $trustdb"
+        fi
+        if (umask 077; touch "$gnupg_dir/.dotfiles-write-test" 2>/dev/null); then
+            rm -f "$gnupg_dir/.dotfiles-write-test"
+        else
+            WARNING "gpg home is not writable: $gnupg_dir"
+            FIX "to fix: chmod 700 $gnupg_dir"
+        fi
+    fi
+
+    if [[ -d "$gnupg_dir" ]]; then
+        local dir_mode
+        dir_mode=$(stat_mode "$gnupg_dir" || true)
+        if [[ -n "$dir_mode" && $dir_mode -gt 700 ]]; then
+            WARNING "gpg home permissions too open: $gnupg_dir ($dir_mode)"
+            FIX "to fix: chmod 700 $gnupg_dir"
+        fi
+
+        local priv_dir="$gnupg_dir/private-keys-v1.d"
+        local priv_mode
+        priv_mode=$(stat_mode "$priv_dir" || true)
+        if [[ -n "$priv_mode" && $priv_mode -gt 700 ]]; then
+            WARNING "gpg private key dir permissions too open: $priv_dir ($priv_mode)"
+            FIX "to fix: chmod 700 $priv_dir"
+        fi
+
+        local file
+        for file in "$gnupg_dir"/gpg-agent.conf \
+                    "$gnupg_dir"/pubring.kbx \
+                    "$gnupg_dir"/trustdb.gpg \
+                    "$gnupg_dir"/random_seed \
+                    "$gnupg_dir"/tofu.db; do
+            if [[ -e "$file" ]]; then
+                local file_mode
+                file_mode=$(stat_mode "$file" || true)
+                if [[ -n "$file_mode" && $file_mode -gt 600 ]]; then
+                    WARNING "gpg file permissions too open: $file ($file_mode)"
+                    FIX "to fix: chmod 600 $file"
+                fi
+            fi
+        done
+    fi
+
     get_gpg_signing_fpr_by_user_id() {
         local email="$1"
         gpg --list-keys --with-colons "$email" |
