@@ -12,6 +12,11 @@ if [ -n "$CODEX_SANDBOX" ] || [ -n "$CODEX_SANDBOX_NETWORK_DISABLED" ]; then
     DOTFILES_SUPPRESS_SCRIPTS=True
 fi
 
+# suppress dotfiles output for Codex CLI (path-based detection)
+if [[ "$PATH" =~ "/Users/markreay/.codex/tmp/path/codex-" ]]; then
+    DOTFILES_SUPPRESS_SCRIPTS=True
+fi
+
 if [[ ! $DOTFILES_LOADED ]] && [[ ! $DOTFILES_SUPPRESS_SCRIPTS ]]
 then
     if which realpath > /dev/null 
