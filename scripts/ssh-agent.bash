@@ -71,7 +71,12 @@ function check-ssh-agent {
   ssh-add -l &> /dev/null
   if [[ "$?" == 2 ]]; then
     # Try to restart ssh-agent
-    (umask 066; /usr/bin/ssh-agent -a "$SSH_AUTH_SOCK_PATH" | sed 's/^echo/#echo/' > "${SSH_ENV}")
+    # Remove stale socket and start fresh agent
+    rm -f "$SSH_AUTH_SOCK_PATH"
+    (
+      umask 066
+      /usr/bin/ssh-agent -a "$SSH_AUTH_SOCK_PATH" | sed 's/^echo/#echo/' > "${SSH_ENV}"
+    )
     . "${SSH_ENV}" > /dev/null
     export SSH_AUTH_SOCK="$SSH_AUTH_SOCK_PATH"
     {
