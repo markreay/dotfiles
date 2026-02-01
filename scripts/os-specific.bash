@@ -5,7 +5,7 @@ is_mac_os() {
 
 # Check if the current system is Windows Subsystem for Linux
 is_wsl() {
-    [[ -n "$WSL_DISTRO_NAME" ]]
+    [[ -n "$WSL_DISTRO_NAME" ]] || grep -qi WSL /proc/version 2>/dev/null
 }
 
 if is_mac_os
