@@ -3,6 +3,12 @@
 # adapted from https://stackoverflow.com/questions/40549332/how-to-check-if-ssh-agent-is-already-running-in-bash
 
 function check-ssh-agent {
+  # Forwarded agent: SOCK exists but no local AGENT_PID
+  if [[ -n "$SSH_AUTH_SOCK" && -z "$SSH_AGENT_PID" ]] && ssh-add -l &>/dev/null; then
+    echo "Using forwarded SSH agent ($(ssh-add -l | wc -l | tr -d ' ') keys)"
+    return 0
+  fi
+
   TITLE Enabling ssh-agent . . .
 
   SSH_ENV="$HOME/.ssh/environment"
