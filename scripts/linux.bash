@@ -1,0 +1,1 @@
+# Placeholder for future Linux-specific configurations. Currently, there are no Linux-specific settings, but this file is included for potential future use and to maintain a consistent structure across different operating systems.
