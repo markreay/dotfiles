@@ -42,7 +42,7 @@ DOTFILES_LOADED=True
             INFO "Local committed changes to push in $dirName"
             INFO "To update, (dot push)"
         fi
-        if [ $(git-status | tail +2 | wc -l) != 0 ]; then
+        if [ $(git-status | tail -n +2 | wc -l) != 0 ]; then
             INFO "Uncommitted changes in $dirName"
             git status -s
             INFO "To update, (dot git commit)"
