@@ -135,7 +135,7 @@ function check_gpg() {
         fi
     }
 
-    if is_mac_os; then check_gpg_keychain; fi
+    if is_macos; then check_gpg_keychain; fi
 
     # Force gpg-agent to prompt passphrase now so future commits are seamless
     echo Force passphrase entry on login | gpg --detach-sign - > /dev/null

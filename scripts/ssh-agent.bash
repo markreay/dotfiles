@@ -18,7 +18,7 @@ function check-ssh-agent {
   mapfile -t identity_files < <(awk '/^[[:space:]]*IdentityFile/ {print $2}' ~/.ssh/config | sed 's~^~/~')
 
   # macOS-specific keychain integration
-  if is_mac_os; then
+  if is_macos; then
     if grep -q "UseKeychain yes" "$HOME/.ssh/config" 2>/dev/null; then
       SSH_ADD_ARGS=--apple-use-keychain
     else

@@ -1,4 +1,4 @@
-if is_mac_os
+if is_macos
 then
 
     export BASH_SILENCE_DEPRECATION_WARNING=1

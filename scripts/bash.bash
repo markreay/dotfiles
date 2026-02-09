@@ -6,7 +6,7 @@ if (( BASH_VERSINFO[0] < _min_bash_major )); then
     echo "❌  Ancient Bash detected: $BASH_VERSION"
     echo "    Your dotfiles require >= $_min_bash_major"
     echo "    Current shell: $SHELL"
-    if is_mac_os; then
+    if is_macos; then
         HOMEBREW_BASH="/opt/homebrew/bin/bash"
         echo "    macOS ships with Bash 3.2 due to licensing issues."
         # check to see if installed
