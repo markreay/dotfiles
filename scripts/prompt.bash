@@ -3,13 +3,19 @@ __prompt_user_part() {
     local green='\[\033[0;32m\]'
     local red='\[\033[1;31m\]'
     local reset='\[\033[0m\]'
-    
-    if [ -n "${GITHUB_USER}" ]; then
-        echo -n "${green}@${GITHUB_USER} "
-    else
-        echo -n "${green}\u "
+    local gray='\[\033[0;37m\]'
+
+    # Hostname (short form)
+    local host="${HOSTNAME%%.*}"
+    echo -n "${green}${host}"
+
+    # Username in parens only if not mark/markreay/mreay
+    if [[ "$USER" != "mark" && ! "$USER" =~ reay ]]; then
+        echo -n " ${gray}(${USER})"
     fi
-    
+
+    echo -n " "
+
     if [ "$exit_code" -ne 0 ]; then
         echo -n "${red}➜"
     else
