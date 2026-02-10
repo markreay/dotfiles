@@ -16,8 +16,8 @@ shift
 case $cmd in
 user)
     echo "[Global]"
-    echo user.name = $globalUserName
-    echo user.email = $globalUserEmail
+    echo "user.name = $globalUserName"
+    echo "user.email = $globalUserEmail"
     ;;
 "" | help)
     echo
@@ -38,49 +38,52 @@ user)
     ;;
 esac
 
-DIRS=$(find "$basePath" \( \
-  -path "~/Music" -o \
-  -path "~/Pictures" -o \
-  -path "~/Desktop" -o \
-  -path "~/Library" \
-  \) -prune -o -name .git -type d -print 2>/dev/null | sort)
+DIRS=()
+while IFS= read -r -d '' dir; do
+    DIRS+=("$dir")
+done < <(find "$basePath" \( \
+  -path "$basePath/Music" -o \
+  -path "$basePath/Pictures" -o \
+  -path "$basePath/Desktop" -o \
+  -path "$basePath/Library" \
+  \) -prune -o -name .git -type d -print0 2>/dev/null | sort -z)
 
-for dir in $DIRS; do
+for dir in "${DIRS[@]}"; do
     (
-        cd $dir/..
+        cd "$dir/.."
         repo=$(realpath "$dir/..")
         repo=${repo/~/\~}
 
         case $cmd in
         list)
-            echo $repo
+            echo "$repo"
             ;;
         fetch)
-            echo \[$repo\]
-            git fetch $*
+            echo "[$repo]"
+            git fetch "$@"
             ;;
         git)
-            echo \[$repo\]
-            git $*
+            echo "[$repo]"
+            git "$@"
             ;;
         status)
             if [[ $(git status -s) ]]; then
-                echo \[$repo\]
-                git status $*
+                echo "[$repo]"
+                git status "$@"
             fi
             ;;
         user)
             userName=$(git config user.name)
             userEmail=$(git config user.email)
 
-            if [[ $globalUserName != $userName || $globalUserEmail != $userEmail ]]; then
+            if [[ "$globalUserName" != "$userName" || "$globalUserEmail" != "$userEmail" ]]; then
                 echo
-                echo \[$repo\]
-                if [[ $globalUserName != $userName ]]; then
-                    echo user.name = $userName
+                echo "[$repo]"
+                if [[ "$globalUserName" != "$userName" ]]; then
+                    echo "user.name = $userName"
                 fi
-                if [[ $globalUserEmail != $userEmail ]]; then
-                    echo user.email = $userEmail
+                if [[ "$globalUserEmail" != "$userEmail" ]]; then
+                    echo "user.email = $userEmail"
                 fi
             fi
             ;;
