@@ -69,16 +69,18 @@ hist_recent() {
     local all=0
     [[ "$1" == "--all" || "$1" == "-a" ]] && all=1
 
-    local files
+    local files=()
     local search_dir
     if [[ "$all" -eq 1 ]]; then
         search_dir="$HIST_DIR"
     else
         search_dir="$HIST_DIR/$HOSTNAME_SHORT"
     fi
-    files=$(find "$search_dir" -type f ! -path '*/.git/*')
+    while IFS= read -r -d '' file; do
+        files+=("$file")
+    done < <(find "$search_dir" -type f ! -path '*/.git/*' -print0)
 
-    hist_parse_and_print "" -- $files
+    hist_parse_and_print "" -- "${files[@]}"
 }
 
 hist_grep() {
@@ -100,18 +102,20 @@ hist_grep() {
     fi
     terms=("$@")
 
-    local files
+    local files=()
     local search_dir
     if [[ "$all" -eq 1 ]]; then
         search_dir="$HIST_DIR"
     else
         search_dir="$HIST_DIR/$HOSTNAME_SHORT"
     fi
-    files=$(find "$search_dir" -type f ! -path '*/.git/*')
+    while IFS= read -r -d '' file; do
+        files+=("$file")
+    done < <(find "$search_dir" -type f ! -path '*/.git/*' -print0)
 
     echo "Searching history for terms: ${terms[*]}"
 
-    hist_parse_and_print "${terms[@]}" -- $files
+    hist_parse_and_print "${terms[@]}" -- "${files[@]}"
 }
 
 
