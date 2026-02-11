@@ -27,6 +27,7 @@ user)
     echo "  --path <base_path>  Use a different base path than ~."
     echo
     echo "Commands:"
+    echo "  check           Show unpushed commits, stashes, and branches per repo."
     echo "  fetch [args]    Run git fetch in each repo."
     echo "  git [args]      Run git command in each repo."
     echo "  help            Show this screen."
@@ -55,6 +56,48 @@ for dir in "${DIRS[@]}"; do
         repo=${repo/~/\~}
 
         case $cmd in
+        check)
+            # Gather info
+            branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "detached")
+
+            # Unpushed commits on current branch
+            upstream=$(git rev-parse --abbrev-ref '@{upstream}' 2>/dev/null)
+            if [[ -n "$upstream" ]]; then
+                ahead=$(git rev-list --count "$upstream"..HEAD 2>/dev/null || echo 0)
+            else
+                ahead="no upstream"
+            fi
+
+            # Stash count
+            stashes=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
+
+            # Local branches (excluding current)
+            branches=$(git branch --format='%(refname:short)' | grep -v "^${branch}$" | wc -l | tr -d ' ')
+
+            # Dirty working tree
+            dirty=""
+            if [[ -n $(git status -s 2>/dev/null) ]]; then
+                dirty=" dirty"
+            fi
+
+            # Only show if there's something interesting
+            if [[ "$ahead" != "0" || "$stashes" != "0" || "$branches" != "0" || -n "$dirty" ]]; then
+                echo "[$repo]"
+                echo "  branch: $branch$dirty"
+                if [[ "$ahead" == "no upstream" ]]; then
+                    echo "  ahead: (no upstream)"
+                elif [[ "$ahead" != "0" ]]; then
+                    echo "  ahead: $ahead commits"
+                fi
+                if [[ "$stashes" != "0" ]]; then
+                    echo "  stashes: $stashes"
+                fi
+                if [[ "$branches" != "0" ]]; then
+                    echo "  branches: $branches other"
+                fi
+                echo
+            fi
+            ;;
         list)
             echo "$repo"
             ;;
