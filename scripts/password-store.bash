@@ -6,6 +6,10 @@ TITLE Checking password store . . .
     }
 
     pass-sync() {
+        if ! pass --help >/dev/null 2>&1; then
+            echo "pass is not installed"
+            return 1
+        fi
         pass git pull --rebase
         pass git push
     }
