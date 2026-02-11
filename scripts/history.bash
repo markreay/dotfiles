@@ -10,7 +10,8 @@ HOSTNAME_SHORT=$(hostname | cut -d '.' -f 1 | tr '[:upper:]' '[:lower:]')
 HISTPATH=$HOME/.history/$HOSTNAME_SHORT
 mkdir -p $HISTPATH
 chmod 700 $HISTPATH
-HISTFILE="$HISTPATH/$(date +%Y-%m-%d)_$(tty | sed 's/\///g;s/^dev//g')"
+TTY_NAME=$(tty | sed 's/\///g;s/^dev//g;s/ /-/g')
+HISTFILE="$HISTPATH/$(date +%Y-%m-%d)_${TTY_NAME}"
 
 # Include timestamps in history
 HISTTIMEFORMAT="%H:%M:%S "
