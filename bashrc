@@ -33,6 +33,8 @@ then
     script=$(resolvelink $BASH_SOURCE)
     dir=`dirname $script`
 
+    export DOTFILES=$dir
+
     if [ -e ~/.dotfilesrc ]; then
         . ~/.dotfilesrc
     fi
