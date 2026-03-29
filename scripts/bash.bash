@@ -31,3 +31,6 @@ if (( BASH_VERSINFO[0] < _min_bash_major )); then
     echo "========================================"
     echo
 fi
+
+
+set -o noclobber
