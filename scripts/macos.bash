@@ -19,6 +19,7 @@ then
             [fzf]="Fuzzy finder for quick navigation/search in terminal"
             [gawk]="GNU awk, extended scripting capability beyond BSD awk"
             [gh]="GitHub CLI for managing repos/issues/PRs from terminal"
+            [glow]="Markdown renderer for terminal — used by 'dot docs'"
             [pass]="Password manager (with gpg)"
             [pinentry-mac]="GUI pinentry for gpg/pass prompts"
             [tmux]="Terminal multiplexer for session persistence"

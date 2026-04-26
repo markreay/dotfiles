@@ -75,9 +75,46 @@ function dot() {
     edit)
         code $DOTFILES
         ;;
+    docs)
+        local docs_dir="$DOTFILES/docs"
+        if [[ ! -d "$docs_dir" ]]; then
+            echo "No docs directory at $docs_dir"
+            return 1
+        fi
+        # Preview uses field {2} (filename) — field {1} is the display title.
+        # Use glow for rendered markdown if installed, else plain cat
+        local preview_cmd="cat $docs_dir/{2}"
+        if command -v glow >/dev/null 2>&1; then
+            preview_cmd="glow -s dark -w \$FZF_PREVIEW_COLUMNS $docs_dir/{2}"
+        fi
+        # Build "title<TAB>relpath" lines; show only the title in the picker
+        # via --with-nth=1, but keep the path in field 2 for preview/open.
+        # Falls back to the relative path if the file has no H1
+        local selection
+        selection=$(
+            while IFS= read -r f; do
+                local rel="${f#$docs_dir/}"
+                local title
+                title=$(awk '/^# / { sub(/^# */, ""); print; exit }' "$f")
+                [[ -z "$title" ]] && title="$rel"
+                printf '%s\t%s\n' "$title" "$rel"
+            done < <(find "$docs_dir" -type f -name "*.md" | sort) \
+            | fzf --prompt="docs > " --height=80% --reverse --border \
+                  --delimiter=$'\t' --with-nth=1 \
+                  --preview="$preview_cmd" \
+                  --preview-window="right:75%:wrap"
+        )
+        [[ -z "$selection" ]] && return 0
+        local doc="${selection##*$'\t'}"
+        if command -v glow >/dev/null 2>&1; then
+            glow -p "$docs_dir/$doc"
+        else
+            ${PAGER:-less} "$docs_dir/$doc"
+        fi
+        ;;
     *)
         echo command $cmd not recognized
-        echo usage: dot edit,git,push,pull
+        echo usage: dot edit,git,push,pull,docs
         ;;
     esac
 }
