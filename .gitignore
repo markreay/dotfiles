@@ -1,2 +1,3 @@
 local/
 .toolchains*
+.claude/settings.local.json
