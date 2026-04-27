@@ -13,7 +13,7 @@ if [ -n "$CODEX_SANDBOX" ] || [ -n "$CODEX_SANDBOX_NETWORK_DISABLED" ]; then
 fi
 
 # suppress dotfiles output for Codex CLI (path-based detection)
-if [[ "$PATH" =~ "/Users/markreay/.codex/tmp/path/codex-" ]]; then
+if [[ "$PATH" =~ "$HOME/.codex/tmp/path/codex-" ]]; then
     DOTFILES_SUPPRESS_SCRIPTS=True
 fi
 
