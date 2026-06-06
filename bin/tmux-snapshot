@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# tmux-snapshot — capture current tmux session state for later restore
+#
+# Usage:
+#   tmux-snapshot              # snapshots the attached session
+#   tmux-snapshot <session>    # snapshots a named session
+#
+# Captures per pane: working dir, tty, scrollback, and the matching
+# .history file (TTY-keyed) so that on restore, up-arrow shows the
+# commands from the snapshotted session.
+
+set -euo pipefail
+
+SNAPSHOT_ROOT="${DOTFILES_TMUX_SNAPSHOTS:-$HOME/.local/share/dotfiles/tmux/snapshots}"
+HOSTNAME_SHORT=$(hostname | cut -d. -f1 | tr '[:upper:]' '[:lower:]')
+HIST_DIR="$HOME/.history/$HOSTNAME_SHORT"
+SCROLLBACK_LINES=50000
+
+# Identify session to snapshot
+if [[ -n "${1:-}" ]]; then
+  SESSION="$1"
+else
+  SESSION=$(tmux display-message -p '#S' 2>/dev/null) || {
+    echo "Error: not inside tmux and no session name passed" >&2
+    echo "Usage: tmux-snapshot [session-name]" >&2
+    exit 1
+  }
+fi
+
+if ! tmux has-session -t "$SESSION" 2>/dev/null; then
+  echo "Error: session '$SESSION' not found" >&2
+  exit 1
+fi
+
+TIMESTAMP=$(date +%Y-%m-%d_%H%M%S)
+SNAPSHOT_DIR="$SNAPSHOT_ROOT/${TIMESTAMP}__${SESSION}"
+mkdir -p "$SNAPSHOT_DIR"
+
+echo "📸 Snapshotting session '$SESSION' → ${SNAPSHOT_DIR/#$HOME/~}"
+
+# Collect pane metadata + capture scrollback + copy history files
+META_TSV="$SNAPSHOT_DIR/.panes.tsv"
+: > "$META_TSV"
+
+while IFS=$'\t' read -r wi wn wl pi pdir ptty pactive; do
+  tty_short="${ptty#/dev/}"
+  scrollback_rel="scrollback-${wi}-${pi}.txt"
+  scrollback_abs="$SNAPSHOT_DIR/$scrollback_rel"
+
+  tmux capture-pane -t "${SESSION}:${wi}.${pi}" -p -S -"$SCROLLBACK_LINES" \
+    > "$scrollback_abs" 2>/dev/null || true
+
+  # Find today's history file for this tty
+  history_src=""
+  today=$(date +%Y-%m-%d)
+  candidate="$HIST_DIR/${today}_${tty_short}"
+  if [[ -f "$candidate" ]]; then
+    cp "$candidate" "$SNAPSHOT_DIR/history-${wi}-${pi}.txt"
+    history_src="$candidate"
+  fi
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$wi" "$wn" "$wl" "$pi" "$pdir" "$ptty" "$tty_short" "$pactive" \
+    "$scrollback_rel" "$history_src" >> "$META_TSV"
+done < <(tmux list-panes -s -t "$SESSION" -F \
+  '#{window_index}	#{window_name}	#{window_layout}	#{pane_index}	#{pane_current_path}	#{pane_tty}	#{pane_active}')
+
+# Build snapshot.json from the TSV
+jq -Rn \
+  --arg session "$SESSION" \
+  --arg saved_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg host "$HOSTNAME_SHORT" \
+  '
+  [inputs | split("\t") | {
+    window_idx: (.[0] | tonumber),
+    window_name: .[1],
+    window_layout: .[2],
+    pane_idx: (.[3] | tonumber),
+    dir: .[4],
+    tty: .[5],
+    tty_short: .[6],
+    active: (.[7] == "1"),
+    scrollback_file: .[8],
+    history_file: (if .[9] == "" then null else .[9] end)
+  }]
+  | group_by(.window_idx)
+  | map({
+      idx: .[0].window_idx,
+      name: .[0].window_name,
+      layout: .[0].window_layout,
+      panes: map({
+        idx: .pane_idx,
+        dir: .dir,
+        tty: .tty,
+        tty_short: .tty_short,
+        active: .active,
+        scrollback_file: .scrollback_file,
+        history_file: .history_file
+      })
+    })
+  | {session_name: $session, saved_at: $saved_at, host: $host, windows: .}
+  ' < "$META_TSV" > "$SNAPSHOT_DIR/snapshot.json"
+
+rm -f "$META_TSV"
+
+pane_count=$(jq '[.windows[].panes[]] | length' "$SNAPSHOT_DIR/snapshot.json")
+window_count=$(jq '.windows | length' "$SNAPSHOT_DIR/snapshot.json")
+
+echo "✓ Saved $window_count window(s), $pane_count pane(s)"
+echo "  Restore with: tmux-restore"

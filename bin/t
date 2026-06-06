@@ -7,6 +7,18 @@ RUNNING_ICON="▶"; TEMPLATE_ICON="●"; ADHOC_ICON="○"
 
 inside_tmux=$(tmux display-message -p '#{client_name}' 2>/dev/null)
 
+# --- CLI flag dispatch (before menu builds) ---
+case "${1:-}" in
+  --save)
+    shift
+    exec "$(dirname "$0")/tmux-snapshot" "$@"
+    ;;
+  --restore)
+    shift
+    exec "$(dirname "$0")/tmux-restore" "$@"
+    ;;
+esac
+
 # --- Template cache ---
 CACHE_DIR="$HOME/.cache/dotfiles/t"
 CACHE_FILE="$CACHE_DIR/templates.txt"
@@ -91,6 +103,8 @@ combined=$(
 )
 
 session=$( (echo -e "$combined"
+            [ -n "$inside_tmux" ] && echo "📸 Snapshot Current Session"
+            echo "📥 Restore Snapshot..."
             [ -n "$inside_tmux" ] && echo "⏏️  Detach"
             [ -n "$inside_tmux" ] && echo "✏️  Rename Current Session"
             echo "♻️  Reread Template Cache"
@@ -100,6 +114,14 @@ session=$( (echo -e "$combined"
 name=$(sed -E 's/^[^[:space:]]+[[:space:]]+([^[:space:]].*[^[:space:]])[[:space:]]+→.*/\1/' <<< "$session" | sed 's/[[:space:]]*$//')
 
 case "$session" in
+  *"Snapshot Current Session"*)
+    exec "$(dirname "$0")/tmux-snapshot"
+    ;;
+
+  *"Restore Snapshot"*)
+    exec "$(dirname "$0")/tmux-restore"
+    ;;
+
   *"Reread Template Cache"*)
     rebuild_cache
     echo "✅ Template cache refreshed."

@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+# tmux-restore — restore a tmux session from a snapshot
+#
+# Usage:
+#   tmux-restore                  # fzf-pick a snapshot
+#   tmux-restore <snapshot-dir>   # restore a specific snapshot (basename or full path)
+#
+# Restores: session/window/pane structure, working dirs, scrollback (as
+# banner) and per-pane history (so up-arrow shows pre-snapshot commands).
+# Does NOT auto-run any commands.
+
+set -euo pipefail
+
+SNAPSHOT_ROOT="${DOTFILES_TMUX_SNAPSHOTS:-$HOME/.local/share/dotfiles/tmux/snapshots}"
+
+if [[ ! -d "$SNAPSHOT_ROOT" ]]; then
+  echo "No snapshots directory at $SNAPSHOT_ROOT" >&2
+  exit 1
+fi
+
+# Pick snapshot
+if [[ -n "${1:-}" ]]; then
+  if [[ -d "$1" ]]; then
+    SNAPSHOT_DIR="$1"
+  else
+    SNAPSHOT_DIR="$SNAPSHOT_ROOT/$1"
+  fi
+else
+  selection=$(
+    while IFS= read -r dir; do
+      manifest="$SNAPSHOT_ROOT/$dir/snapshot.json"
+      [[ -f "$manifest" ]] || continue
+      session=$(jq -r '.session_name' "$manifest")
+      saved=$(jq -r '.saved_at' "$manifest")
+      windows=$(jq '.windows | length' "$manifest")
+      panes=$(jq '[.windows[].panes[]] | length' "$manifest")
+      printf '%s\t%-20s  %s  %sw/%sp\n' "$dir" "$session" "$saved" "$windows" "$panes"
+    done < <(ls -1 "$SNAPSHOT_ROOT" | sort -r) |
+    fzf --with-nth=2.. --delimiter=$'\t' \
+        --prompt='restore snapshot > ' --reverse --height 50% --border
+  ) || exit 0
+  SNAPSHOT_DIR="$SNAPSHOT_ROOT/$(cut -f1 <<< "$selection")"
+fi
+
+MANIFEST="$SNAPSHOT_DIR/snapshot.json"
+if [[ ! -f "$MANIFEST" ]]; then
+  echo "Error: $MANIFEST not found" >&2
+  exit 1
+fi
+
+ORIGINAL_NAME=$(jq -r '.session_name' "$MANIFEST")
+TARGET_NAME="$ORIGINAL_NAME"
+
+# Conflict resolution: prompt for rename or cancel
+while tmux has-session -t "$TARGET_NAME" 2>/dev/null; do
+  echo "Session '$TARGET_NAME' already exists."
+  read -rp "Enter a new name (blank to cancel): " new_name
+  if [[ -z "$new_name" ]]; then
+    echo "Cancelled."
+    exit 0
+  fi
+  TARGET_NAME="$new_name"
+done
+
+echo "Restoring '$ORIGINAL_NAME' → '$TARGET_NAME'..."
+
+# Helper: prep a pane with scrollback banner + history merge.
+# Uses a leading space on the sent command so HISTCONTROL=ignoreboth keeps
+# the bootstrap command out of the new pane's history.
+prep_pane() {
+  local target="$1"
+  local scrollback_abs="$2"
+  local history_src="$3"
+
+  local cmd=" {"
+
+  if [[ -n "$history_src" && -f "$history_src" ]]; then
+    cmd+=" cat $(printf '%q' "$history_src") >> \"\$HISTFILE\"; history -r \"\$HISTFILE\";"
+  fi
+
+  if [[ -s "$scrollback_abs" ]]; then
+    cmd+=" clear; echo '── prior pane scrollback (last $(wc -l < "$scrollback_abs" | tr -d ' ') lines) ──';"
+    cmd+=" cat $(printf '%q' "$scrollback_abs");"
+    cmd+=" echo '── end of prior scrollback ──';"
+  fi
+
+  cmd+=" }"
+
+  # Only send if there's actual work to do (the bare " { }" is a noop)
+  if [[ "$cmd" != " { }" ]]; then
+    tmux send-keys -t "$target" "$cmd" Enter
+  fi
+}
+
+# Build the session window-by-window.
+# Address windows/panes by their tmux IDs (@1, %1, etc.) rather than by
+# session:name — names can collide (e.g., multiple "bash" windows) and the
+# IDs are unique and stable for the life of the server.
+first_window=true
+while IFS= read -r window_json; do
+  win_name=$(jq -r '.name' <<< "$window_json")
+  win_layout=$(jq -r '.layout' <<< "$window_json")
+  pane_count=$(jq '.panes | length' <<< "$window_json")
+  first_dir=$(jq -r '.panes[0].dir' <<< "$window_json")
+
+  if [[ "$first_window" == true ]]; then
+    win_id=$(tmux new-session -d -s "$TARGET_NAME" -n "$win_name" \
+              -c "$first_dir" -P -F '#{window_id}')
+    first_window=false
+  else
+    win_id=$(tmux new-window -t "$TARGET_NAME:" -n "$win_name" \
+              -c "$first_dir" -P -F '#{window_id}')
+  fi
+
+  # Splits for additional panes
+  for ((i=1; i<pane_count; i++)); do
+    p_dir=$(jq -r ".panes[$i].dir" <<< "$window_json")
+    tmux split-window -t "$win_id" -c "$p_dir"
+  done
+
+  # Apply saved layout to restore pane geometry
+  if [[ -n "$win_layout" && "$win_layout" != "null" ]]; then
+    tmux select-layout -t "$win_id" "$win_layout" 2>/dev/null || true
+  fi
+
+  # Prep each pane with history + scrollback (address by pane_id so we don't
+  # depend on index numbering)
+  pane_ids=()
+  while IFS= read -r pid; do pane_ids+=("$pid"); done < <(
+    tmux list-panes -t "$win_id" -F '#{pane_id}'
+  )
+
+  for ((i=0; i<pane_count; i++)); do
+    sb_rel=$(jq -r ".panes[$i].scrollback_file" <<< "$window_json")
+    hist_src=$(jq -r ".panes[$i].history_file // empty" <<< "$window_json")
+    if [[ -n "${pane_ids[$i]:-}" ]]; then
+      prep_pane "${pane_ids[$i]}" "$SNAPSHOT_DIR/$sb_rel" "$hist_src"
+    fi
+  done
+
+done < <(jq -c '.windows[]' "$MANIFEST")
+
+# Attach or switch
+if [[ -n "${TMUX:-}" ]]; then
+  tmux switch-client -t "$TARGET_NAME"
+else
+  exec tmux attach -t "$TARGET_NAME"
+fi
