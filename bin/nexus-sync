@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# nexus-sync — run the @nexus/sync CLI from anywhere.
+#
+# The CLI is TypeScript run through tsx straight from source (no build step),
+# so this execs tsx on the entry point rather than a compiled binary. Nothing
+# here depends on the current directory: the mirror repo is resolved by the
+# CLI itself from <repo-dir> / NEXUS_MIRROR_REPO / mirrorRepo in
+# ~/.nexus/config.json.
+#
+# Note it runs whatever branch the checkout happens to be on — handy for
+# testing a branch, worth remembering when something behaves oddly.
+#
+# Point NEXUS_REPO at a different checkout to run one deliberately.
+set -euo pipefail
+
+# Remember whether this was the user's choice or our default, so the error
+# below can say "you pointed me at" vs "I looked in" honestly.
+if [ -n "${NEXUS_REPO:-}" ]; then repo_from_env=1; else repo_from_env=0; fi
+NEXUS_REPO="${NEXUS_REPO:-$HOME/src/zoe/nexus}"
+TSX="$NEXUS_REPO/node_modules/.bin/tsx"
+ENTRY="$NEXUS_REPO/packages/sync/src/index.ts"
+
+# Somewhere else it might plausibly live, so a moved checkout gets a pointer
+# rather than a shrug.
+find_elsewhere() {
+  local d
+  for d in "$HOME/src/nexus" "$HOME/src/zoe/nexus" "$HOME/code/nexus" \
+           "$HOME/projects/nexus" "$HOME/dev/nexus" "$HOME/nexus"; do
+    [ "$d" = "$NEXUS_REPO" ] && continue
+    [ -f "$d/packages/sync/src/index.ts" ] && { echo "$d"; return 0; }
+  done
+  return 1
+}
+
+if [ ! -f "$ENTRY" ]; then
+  echo "nexus-sync: can't find the nexus checkout." >&2
+  echo >&2
+  if [ "$repo_from_env" = 1 ]; then
+    echo "  You pointed NEXUS_REPO at:  $NEXUS_REPO" >&2
+  else
+    echo "  Looked in:  $NEXUS_REPO  (the default)" >&2
+  fi
+  echo >&2
+  if found=$(find_elsewhere); then
+    echo "  Found one that looks right at:  $found" >&2
+    echo >&2
+    echo "  Use it once:      NEXUS_REPO=$found nexus-sync $*" >&2
+    echo "  Or for good:      echo 'export NEXUS_REPO=$found' >> ~/.bashrc" >&2
+  else
+    echo "  If it lives somewhere else, point me at it:" >&2
+    echo "      export NEXUS_REPO=/path/to/nexus" >&2
+    echo >&2
+    echo "  If it isn't cloned yet:" >&2
+    echo "      git clone git@github.com:markreay/nexus.git ~/src/zoe/nexus" >&2
+  fi
+  exit 127
+fi
+
+if [ ! -x "$TSX" ]; then
+  echo "nexus-sync: found the repo, but its dependencies aren't installed." >&2
+  echo >&2
+  echo "  Repo:     $NEXUS_REPO" >&2
+  echo "  Missing:  node_modules/.bin/tsx" >&2
+  echo >&2
+  echo "  Fix it with:" >&2
+  echo "      (cd $NEXUS_REPO && yarn install)" >&2
+  exit 127
+fi
+
+exec "$TSX" "$ENTRY" "$@"
