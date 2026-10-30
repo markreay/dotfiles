@@ -18,7 +18,17 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 fi
 
 HIST_DIR="${HOME}/.history"
-HOSTNAME_SHORT=$(hostname | cut -d '.' -f 1 | tr '[:upper:]' '[:lower:]')
+
+# A machine rename (MDM, DHCP, an OS upgrade) orphans every prior day's history
+# under a fresh directory. Pin the name with $HIST_HOST or ~/.hist-host.
+# Mirrored in the dotfiles scripts/history.bash.
+if [[ -n "$HIST_HOST" ]]; then
+  HOSTNAME_SHORT="$HIST_HOST"
+elif [[ -r "$HOME/.hist-host" ]]; then
+  read -r HOSTNAME_SHORT < "$HOME/.hist-host"
+else
+  HOSTNAME_SHORT=$(hostname | cut -d '.' -f 1 | tr '[:upper:]' '[:lower:]')
+fi
 DATE_FMT="%Y-%m-%d %H:%M"  # e.g., "Jul 19 12:43"
 
 hist_usage() {
@@ -32,6 +42,32 @@ hist_usage() {
     echo "               Options: --all, -a  Search across all machines"
     echo
     echo "  sync         Commit & push .history git repo. Also pulls latest changes."
+    echo
+    echo "History lives in ~/.history/<host>; this machine is '$HOSTNAME_SHORT'."
+    echo "Set \$HIST_HOST or write a name to ~/.hist-host to keep that directory"
+    echo "stable when the machine gets renamed."
+}
+
+# Fill the `files` array with the history files for the chosen scope. awk reads
+# stdin when handed no file arguments, so an empty scope must not reach it.
+hist_collect_files() {
+    local all="$1" subcmd="$2"
+    local search_dir="$HIST_DIR"
+    [[ "$all" -eq 1 ]] || search_dir="$HIST_DIR/$HOSTNAME_SHORT"
+
+    files=()
+    while IFS= read -r -d '' file; do
+        files+=("$file")
+    done < <(find "$search_dir" -type f ! -path '*/.git/*' -print0 2>/dev/null)
+
+    if [[ "${#files[@]}" -eq 0 ]]; then
+        echo "[hist] No history found in $search_dir" >&2
+        if [[ "$all" -eq 0 ]]; then
+            echo "[hist] Try 'hist $subcmd --all' to search every machine, or pin this" >&2
+            echo "[hist] machine's name in ~/.hist-host if it was recently renamed." >&2
+        fi
+        return 1
+    fi
 }
 
 hist_parse_and_print() {
@@ -70,15 +106,7 @@ hist_recent() {
     [[ "$1" == "--all" || "$1" == "-a" ]] && all=1
 
     local files=()
-    local search_dir
-    if [[ "$all" -eq 1 ]]; then
-        search_dir="$HIST_DIR"
-    else
-        search_dir="$HIST_DIR/$HOSTNAME_SHORT"
-    fi
-    while IFS= read -r -d '' file; do
-        files+=("$file")
-    done < <(find "$search_dir" -type f ! -path '*/.git/*' -print0)
+    hist_collect_files "$all" recent || return 1
 
     hist_parse_and_print "" -- "${files[@]}"
 }
@@ -103,15 +131,7 @@ hist_grep() {
     terms=("$@")
 
     local files=()
-    local search_dir
-    if [[ "$all" -eq 1 ]]; then
-        search_dir="$HIST_DIR"
-    else
-        search_dir="$HIST_DIR/$HOSTNAME_SHORT"
-    fi
-    while IFS= read -r -d '' file; do
-        files+=("$file")
-    done < <(find "$search_dir" -type f ! -path '*/.git/*' -print0)
+    hist_collect_files "$all" grep || return 1
 
     echo "Searching history for terms: ${terms[*]}"
 

@@ -6,7 +6,17 @@ TITLE Enabling command history . . .
 # History file is now .history/20YY-MM-DD_tty1
 # Inspired by https://unix.stackexchange.com/questions/1288/preserve-bash-history-in-multiple-terminal-windows
 HOSTNAME=$(hostname)
-HOSTNAME_SHORT=$(hostname | cut -d '.' -f 1 | tr '[:upper:]' '[:lower:]')
+
+# A machine rename (MDM, DHCP, an OS upgrade) orphans every prior day's history
+# under a fresh directory. Pin the name with $HIST_HOST or ~/.hist-host.
+# Mirrored in bin/hist, which runs standalone.
+if [[ -n "$HIST_HOST" ]]; then
+    HOSTNAME_SHORT=$HIST_HOST
+elif [[ -r "$HOME/.hist-host" ]]; then
+    read -r HOSTNAME_SHORT < "$HOME/.hist-host"
+else
+    HOSTNAME_SHORT=$(hostname | cut -d '.' -f 1 | tr '[:upper:]' '[:lower:]')
+fi
 HISTPATH=$HOME/.history/$HOSTNAME_SHORT
 mkdir -p $HISTPATH
 chmod 700 $HISTPATH
